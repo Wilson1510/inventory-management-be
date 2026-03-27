@@ -41,7 +41,8 @@ INSTALLED_APPS = [
     'django.contrib.sessions',
     'django.contrib.messages',
     'django.contrib.staticfiles',
-    'invensys',
+    'rest_framework',
+    'invensys.apps.InvensysConfig',
 ]
 
 MIDDLEWARE = [
