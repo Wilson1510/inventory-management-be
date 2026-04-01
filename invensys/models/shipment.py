@@ -39,13 +39,15 @@ class Shipment(BaseModel):
             super().save(update_fields=["number"])
 
     def _generate_number(self):
-        return f"{self.__class__.__name__[0].upper()}{self.pk:05d}"
+        return f"{self.NUMBER_PREFIX}{self.pk:05d}"
 
     def __str__(self):
         return self.number
 
 
 class Delivery(Shipment):
+    NUMBER_PREFIX = 'DO'
+
     sales_order = models.ForeignKey(
         'invensys.SalesOrder', on_delete=models.CASCADE, related_name='deliveries'
     )
@@ -72,6 +74,8 @@ class Delivery(Shipment):
 
 
 class Receipt(Shipment):
+    NUMBER_PREFIX = 'RI'
+
     purchase_order = models.ForeignKey(
         'invensys.PurchaseOrder', on_delete=models.CASCADE, related_name='receipts'
     )

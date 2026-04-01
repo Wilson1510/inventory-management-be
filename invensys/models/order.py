@@ -37,7 +37,7 @@ class BaseOrder(BaseModel):
         self.save(update_fields=["total"])
 
     def _generate_number(self):
-        return f"{self.__class__.__name__[0].upper()}{self.pk:05d}"
+        return f"{self.NUMBER_PREFIX}{self.pk:05d}"
 
     def _validate_items_exist(self):
         if not self.items.exists():
@@ -53,6 +53,8 @@ class BaseOrder(BaseModel):
 
 
 class PurchaseOrder(BaseOrder):
+    NUMBER_PREFIX = 'PO'
+
     supplier = models.ForeignKey(
         Supplier, on_delete=models.CASCADE, related_name='purchase_orders'
     )
@@ -109,6 +111,8 @@ class PurchaseOrder(BaseOrder):
 
 
 class SalesOrder(BaseOrder):
+    NUMBER_PREFIX = 'SO'
+
     customer = models.ForeignKey(
         Customer, on_delete=models.CASCADE, related_name='sales_orders'
     )
