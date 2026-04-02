@@ -1,0 +1,2 @@
+from .test_sale_order import BaseSaleOrderTest
+from .test_purchase_order import BasePurchaseOrderTest
