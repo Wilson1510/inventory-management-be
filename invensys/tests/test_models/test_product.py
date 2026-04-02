@@ -8,33 +8,38 @@ class ProductModelTest(TestCase):
         self.category = Category.objects.create(name='Test Category')
         self.product = Product.objects.create(
             name='Test Product',
-            category=self.category,
-            sku_number='1234567890'
+            category=self.category
         )
         self.unit = Unit.objects.create(name='Test Unit')
 
-    def test_slug_is_generated_from_name(self):
+    def test_slug_is_generated_from_name_when_slug_is_not_set(self):
         self.assertEqual(self.product.slug, 'test-product')
 
-    def test_update_slug_when_name_is_changed(self):
+    def test_slug_is_not_changed_when_name_is_changed(self):
         self.assertEqual(self.product.slug, 'test-product')
         self.product.name = 'Updated Product'
         self.product.save()
-        self.assertEqual(self.product.slug, 'updated-product')
+        self.assertEqual(self.product.slug, 'test-product')
+
+    def test_slug_is_not_set_from_name_when_slug_is_set(self):
+        product = Product.objects.create(
+            name='Test Product',
+            category=self.category,
+            slug='test-product-slug'
+        )
+        self.assertEqual(product.slug, 'test-product-slug')
 
     def test_slug_is_unique(self):
         with self.assertRaises(IntegrityError):
             Product.objects.create(
                 name='Test Product',
-                category=self.category,
-                sku_number='1234567891'
+                category=self.category
             )
 
     def test_slug_remove_special_characters(self):
         product = Product.objects.create(
             name='Test! & Product @#$%^&*() End',
-            category=self.category,
-            sku_number='1234567892'
+            category=self.category
         )
         self.assertEqual(product.slug, 'test-product-end')
 
@@ -43,7 +48,7 @@ class ProductModelTest(TestCase):
             Product.objects.create(
                 name='Test Product 2',
                 category=self.category,
-                sku_number='1234567890'
+                sku_number=self.product.sku_number
             )
 
     def test_base_price_is_set_to_0_by_default(self):

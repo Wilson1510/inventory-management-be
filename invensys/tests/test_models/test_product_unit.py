@@ -6,9 +6,7 @@ from django.db import IntegrityError
 class ProductUnitModelTest(TestCase):
     def setUp(self):
         self.category = Category.objects.create(name='Test Category')
-        self.product = Product.objects.create(
-            name='Test Product', category=self.category, sku_number='1234567890'
-        )
+        self.product = Product.objects.create(name='Test Product', category=self.category)
         self.unit1 = Unit.objects.create(name='Test Unit 1')
         self.unit2 = Unit.objects.create(name='Test Unit 2')
         self.unit3 = Unit.objects.create(name='Test Unit 3')
