@@ -182,7 +182,7 @@ class PurchaseOrderItem(BaseOrderItem):
     purchase = models.ForeignKey(PurchaseOrder, on_delete=models.CASCADE, related_name='items')
 
     def save(self, *args, **kwargs):
-        if self.unit is None:
+        if self.unit_id is None:
             pu = ProductUnit.objects.filter(
                 product=self.product, is_base_unit=True
             ).select_related("unit").first()
@@ -204,7 +204,7 @@ class SalesOrderItem(BaseOrderItem):
     sales = models.ForeignKey(SalesOrder, on_delete=models.CASCADE, related_name='items')
 
     def save(self, *args, **kwargs):
-        if self.unit is None:
+        if self.unit_id is None:
             pu = ProductUnit.objects.filter(
                 product=self.product, is_base_unit=True
             ).select_related("unit").first()

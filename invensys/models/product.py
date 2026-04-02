@@ -2,6 +2,7 @@ from django.db import models
 from .base import BaseModel
 from django.utils.text import slugify
 from .category import Category
+from uuid import uuid4
 
 
 class Unit(BaseModel):
@@ -11,17 +12,22 @@ class Unit(BaseModel):
         return self.name
 
 
+def generate_sku_number():
+    return uuid4().hex[:10].upper()
+
+
 class Product(BaseModel):
     name = models.CharField(max_length=255)
     slug = models.SlugField(unique=True)
-    sku_number = models.CharField(max_length=150, unique=True)
+    sku_number = models.CharField(max_length=150, unique=True, default=generate_sku_number)
     base_price = models.DecimalField(max_digits=10, decimal_places=2, default=0)
     quantity = models.IntegerField(default=0)
     category = models.ForeignKey(Category, on_delete=models.CASCADE, related_name='products')
     units = models.ManyToManyField(Unit, through='ProductUnit', related_name='products')
 
     def save(self, *args, **kwargs):
-        self.slug = slugify(self.name)
+        if not self.slug:
+            self.slug = slugify(self.name)
         super().save(*args, **kwargs)
 
     def __str__(self):
