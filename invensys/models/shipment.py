@@ -51,7 +51,7 @@ class Delivery(Shipment):
     sales_order = models.ForeignKey(
         'invensys.SalesOrder', on_delete=models.CASCADE, related_name='deliveries'
     )
-    delivery_date = models.DateField(null=True, blank=True)
+    delivery_date = models.DateField()
 
     def done(self):
         with transaction.atomic():
@@ -60,6 +60,7 @@ class Delivery(Shipment):
             self.checked_by = None
             self.checked_at = timezone.now()
             self._subtract_product_quantity()
+            self._adjust_product_base_price_if_stock_is_zero()
             self.save(update_fields=["status", "checked_by", "checked_at"])
 
     def cancel(self):
@@ -69,8 +70,16 @@ class Delivery(Shipment):
     def _subtract_product_quantity(self):
         for item in self.items.all():
             multiplier = item.get_multiplier()
+            item.validate_quantity_delivered_less_than_or_equal_to_quantity()
+            item.validate_stock_is_available()
             item.product.quantity -= item.quantity_delivered * multiplier
             item.product.save(update_fields=["quantity"])
+
+    def _adjust_product_base_price_if_stock_is_zero(self):
+        for item in self.items.all():
+            if item.product.quantity == 0:
+                item.product.base_price = 0
+                item.product.save(update_fields=["base_price"])
 
 
 class Receipt(Shipment):
@@ -79,7 +88,7 @@ class Receipt(Shipment):
     purchase_order = models.ForeignKey(
         'invensys.PurchaseOrder', on_delete=models.CASCADE, related_name='receipts'
     )
-    arrival_date = models.DateField(null=True, blank=True)
+    arrival_date = models.DateField()
 
     def done(self):
         with transaction.atomic():
@@ -118,15 +127,21 @@ class ShipmentItem(BaseModel):
         abstract = True
 
     def get_multiplier(self):
-        prod_unit = ProductUnit.objects.filter(product=self.product, unit=self.unit).first()
-        if prod_unit is None:
-            raise ValueError(f"Product {self.product.name} does not have a unit {self.unit.name}")
+        prod_unit = ProductUnit.objects.get(product=self.product, unit=self.unit)
         return prod_unit.multiplier
 
 
 class DeliveryItem(ShipmentItem):
     delivery = models.ForeignKey(Delivery, on_delete=models.CASCADE, related_name='items')
     quantity_delivered = models.IntegerField(default=0)
+
+    def validate_quantity_delivered_less_than_or_equal_to_quantity(self):
+        if self.quantity_delivered > self.quantity:
+            raise ValueError("Quantity delivered must be less than or equal to quantity")
+
+    def validate_stock_is_available(self):
+        if self.quantity_delivered > self.product.quantity:
+            raise ValueError(f"Stock is not available for product {self.product.name}")
 
     def __str__(self):
         return f"{self.delivery.number} - {self.product.name}"
