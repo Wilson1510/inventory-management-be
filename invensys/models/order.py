@@ -163,8 +163,7 @@ class SalesOrder(BaseOrder):
                 delivery=delivery,
                 product=item.product,
                 quantity=item.quantity,
-                unit=item.unit,
-                price=item.price
+                unit=item.unit
             )
 
 

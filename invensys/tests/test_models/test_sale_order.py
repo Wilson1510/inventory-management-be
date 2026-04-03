@@ -158,7 +158,6 @@ class SalesOrderModelTest(BaseSaleOrderTest):
         self.assertEqual(delivery_created.first().items.count(), 3)
         self.assertEqual(delivery_created.first().items.first().product, self.products[0])
         self.assertEqual(delivery_created.first().items.first().quantity, 1)
-        self.assertEqual(delivery_created.first().items.first().price, 100)
         self.assertEqual(delivery_created.first().items.first().unit, self.units[0])
 
     def test_status_is_cancelled_when_order_is_cancelled(self):

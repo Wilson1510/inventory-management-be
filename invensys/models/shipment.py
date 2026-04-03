@@ -119,7 +119,6 @@ class Receipt(Shipment):
 class ShipmentItem(BaseModel):
     product = models.ForeignKey(Product, on_delete=models.CASCADE, related_name='%(class)s_items')
     quantity = models.IntegerField(default=1)
-    price = models.DecimalField(max_digits=10, decimal_places=2)
     unit = models.ForeignKey(Unit, on_delete=models.CASCADE)
     notes = models.TextField(null=True, blank=True)
 
@@ -150,6 +149,7 @@ class DeliveryItem(ShipmentItem):
 class ReceiptItem(ShipmentItem):
     receipt = models.ForeignKey(Receipt, on_delete=models.CASCADE, related_name='items')
     quantity_received = models.IntegerField(default=0)
+    price = models.DecimalField(max_digits=10, decimal_places=2)
 
     def calculate_product_base_price(self):
         multiplier = self.get_multiplier()
