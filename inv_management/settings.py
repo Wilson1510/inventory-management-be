@@ -31,6 +31,14 @@ DEBUG = True
 
 ALLOWED_HOSTS = []
 
+ENV = os.getenv("ENV", "dev")
+
+if ENV == "test":
+    PASSWORD_HASHERS = [
+        'django.contrib.auth.hashers.MD5PasswordHasher',
+    ]
+    DEFAULT_FILE_STORAGE = 'django.core.files.storage.FileSystemStorage'
+
 
 # Application definition
 
