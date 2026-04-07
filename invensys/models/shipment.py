@@ -2,7 +2,7 @@ from django.db import models
 from .base import BaseModel
 # from .order import SalesOrder, PurchaseOrder
 from .product import Product, Unit, ProductUnit
-from django.contrib.auth.models import User
+from django.conf import settings
 from django.db import transaction
 from django.utils import timezone
 from decimal import Decimal, ROUND_HALF_UP
@@ -24,7 +24,9 @@ class Shipment(BaseModel):
         max_length=100, choices=ShipmentMethod.choices, default=ShipmentMethod.PICKUP
     )
     notes = models.TextField(null=True, blank=True)
-    checked_by = models.ForeignKey(User, on_delete=models.SET_NULL, null=True, blank=True)
+    checked_by = models.ForeignKey(
+        settings.AUTH_USER_MODEL, on_delete=models.SET_NULL, null=True, blank=True
+    )
     checked_at = models.DateTimeField(null=True, blank=True)
 
     class Meta:

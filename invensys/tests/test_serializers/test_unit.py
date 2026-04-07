@@ -1,14 +1,15 @@
 from django.test import TestCase
 from ...models import Unit
 from ...serializers import UnitSerializer, Metadata
-from django.contrib.auth.models import User
+from django.contrib.auth import get_user_model
 
 
 class UnitSerializerTest(TestCase):
     def setUp(self):
         self.unit_data = {'name': 'Test Unit'}
         self.unit = Unit.objects.create(name='Test Unit 2')
-        self.user = User.objects.create(username='testuser')
+        User = get_user_model()
+        self.user = User.objects.create_user(username='testuser', password='x')
 
     def test_metadata_is_read_only(self):
         metadata = {

@@ -1,3 +1,4 @@
+from .user import User
 from .category import *
 from .product import *
 from .contact import *

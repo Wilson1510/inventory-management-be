@@ -1,14 +1,15 @@
 from django.test import TestCase
 from ...models import Category
 from ...serializers import CategorySerializer, Metadata
-from django.contrib.auth.models import User
+from django.contrib.auth import get_user_model
 
 
 class CategorySerializerTest(TestCase):
     def setUp(self):
         self.category_data = {'name': 'Test Category'}
         self.category = Category.objects.create(**self.category_data)
-        self.user = User.objects.create(username='testuser')
+        User = get_user_model()
+        self.user = User.objects.create_user(username='testuser', password='x')
 
     def test_metadata_is_read_only(self):
         metadata = {

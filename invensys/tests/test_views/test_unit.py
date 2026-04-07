@@ -1,12 +1,13 @@
 from django.urls import reverse
 from rest_framework import status
 from rest_framework.test import APITestCase
-from django.contrib.auth.models import User
+from django.contrib.auth import get_user_model
 from ...models import Unit
 
 
 class UnitViewSetTest(APITestCase):
     def setUp(self):
+        User = get_user_model()
         self.user_a = User.objects.create_user(username='usera', password='password123')
         self.user_b = User.objects.create_user(username='userb', password='password123')
 
