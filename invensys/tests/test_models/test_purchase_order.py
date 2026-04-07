@@ -200,3 +200,13 @@ class PurchaseOrderModelTest(BasePurchaseOrderTest):
             str(self.purchase_order_items[2]),
             f"{self.purchase_order.number} - {self.products[2].name}"
         )
+
+    def test_cannot_delete_order_if_status_is_confirmed(self):
+        self.fill_arrival_date()
+        self.purchase_order.confirm()
+        with self.assertRaises(ValueError):
+            self.purchase_order.delete()
+
+    def test_can_delete_order_if_status_is_not_confirmed(self):
+        self.purchase_order.delete()
+        self.assertEqual(PurchaseOrder.objects.count(), 0)

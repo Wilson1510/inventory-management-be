@@ -198,3 +198,13 @@ class SalesOrderModelTest(BaseSaleOrderTest):
         self.assertEqual(
             str(self.sales_order_items[2]), f"{self.sales_order.number} - {self.products[2].name}"
         )
+
+    def test_cannot_delete_order_if_status_is_confirmed(self):
+        self.fill_delivery_date()
+        self.sales_order.confirm()
+        with self.assertRaises(ValueError):
+            self.sales_order.delete()
+
+    def test_can_delete_order_if_status_is_not_confirmed(self):
+        self.sales_order.delete()
+        self.assertEqual(SalesOrder.objects.count(), 0)

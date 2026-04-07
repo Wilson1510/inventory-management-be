@@ -29,6 +29,11 @@ class BaseOrder(BaseModel):
             self.number = self._generate_number()
             super().save(update_fields=["number"])
 
+    def delete(self, *args, **kwargs):
+        if self.status == self.Status.CONFIRMED:
+            raise ValueError("Cannot delete a confirmed order")
+        super().delete(*args, **kwargs)
+
     def calculate_total(self):
         return self.items.aggregate(total=Sum(F("price") * F("quantity")))["total"] or 0
 
