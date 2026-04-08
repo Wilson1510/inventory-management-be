@@ -292,6 +292,8 @@
 **Request Body:**
 PUT send all fields
 PATCH send only changed fields
+In prices and units, if id is not provided, it will be created as new price or unit.
+If there are prices or units that are not in the request, they will be deleted.
 ```json
 {
     "name": "Test Update",
@@ -316,7 +318,6 @@ PATCH send only changed fields
             "unit": 2
         },
         {
-            "id": 4,
             "price": 3400000,
             "minimum_quantity": 1,
             "unit": 3
@@ -336,7 +337,6 @@ PATCH send only changed fields
             "is_base_unit": false
         },
         {
-            "id": 3,
             "unit": 3,
             "multiplier": 60,
             "is_base_unit": false

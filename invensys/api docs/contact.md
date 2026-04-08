@@ -1,6 +1,6 @@
 # API Endpoints and Payload
 
-the same thing for suppliers, just change customers to suppliers
+* Customers mirrors suppliers, just change customers to suppliers
 
 ## List
 **Endpoint:** `GET /api/customers/`
@@ -14,6 +14,9 @@ the same thing for suppliers, just change customers to suppliers
         "phone": "081234567890",
         "email": "test@customer.com",
         "address": "Jl. Test No. 123, Jakarta",
+        "count_sales_orders": 10,
+        "last_sales_order_date": "2026-04-04T06:22:34.514325Z",
+        "total_sales_amount": "10000000.00",
         "id": 6,
         "created_at": "2026-04-04T06:22:34.514325Z",
         "created_by": 9,
@@ -26,6 +29,9 @@ the same thing for suppliers, just change customers to suppliers
         "phone": "081234567891",
         "email": "test2@customer.com",
         "address": "Jl. Test No. 124, Jakarta",
+        "count_sales_orders": 10,
+        "last_sales_order_date": "2026-04-04T06:22:34.514325Z",
+        "total_sales_amount": "10000000.00",
         "id": 7,
         "created_at": "2026-04-04T07:22:34.514325Z",
         "created_by": 10,
