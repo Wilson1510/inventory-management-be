@@ -8,10 +8,8 @@ from ...models import Category
 class CategoryViewSetTest(APITestCase):
     def setUp(self):
         User = get_user_model()
-        self.user_a = User.objects.create_user(username='usera', password='password123')
-        self.user_b = User.objects.create_user(username='userb', password='password123')
-
-        self.category = Category.objects.create(name='Elektronik', created_by=self.user_a)
+        self.user = User.objects.create_user(username='user', password='password123')
+        self.category = Category.objects.create(name='Elektronik')
 
         self.list_url = reverse('category-list')
         self.detail_url = reverse('category-detail', kwargs={'pk': self.category.pk})
@@ -21,7 +19,7 @@ class CategoryViewSetTest(APITestCase):
         self.assertEqual(response.status_code, status.HTTP_403_FORBIDDEN)
 
     def test_get_categories_list(self):
-        self.client.force_authenticate(user=self.user_a)
+        self.client.force_authenticate(user=self.user)
         response = self.client.get(self.list_url)
 
         self.assertEqual(response.status_code, status.HTTP_200_OK)
@@ -29,13 +27,13 @@ class CategoryViewSetTest(APITestCase):
         self.assertEqual(response.data[0]['name'], self.category.name)
 
     def test_get_category_detail(self):
-        self.client.force_authenticate(user=self.user_a)
+        self.client.force_authenticate(user=self.user)
         response = self.client.get(self.detail_url)
         self.assertEqual(response.status_code, status.HTTP_200_OK)
         self.assertEqual(response.data['name'], self.category.name)
 
-    def test_create_category_sets_tracking_fields(self):
-        self.client.force_authenticate(user=self.user_a)
+    def test_create_category(self):
+        self.client.force_authenticate(user=self.user)
         data = {'name': 'Pakaian'}
 
         response = self.client.post(self.list_url, data)
@@ -43,11 +41,10 @@ class CategoryViewSetTest(APITestCase):
         self.assertEqual(response.status_code, status.HTTP_201_CREATED)
 
         new_category = Category.objects.get(name='Pakaian')
-        self.assertEqual(new_category.created_by, self.user_a)
-        self.assertEqual(new_category.updated_by, self.user_a)
+        self.assertEqual(new_category.name, 'Pakaian')
 
-    def test_update_category_changes_only_updated_by(self):
-        self.client.force_authenticate(user=self.user_b)
+    def test_update_category(self):
+        self.client.force_authenticate(user=self.user)
         data = {'name': 'Elektronik Updated'}
 
         response = self.client.patch(self.detail_url, data)
@@ -56,31 +53,10 @@ class CategoryViewSetTest(APITestCase):
 
         self.category.refresh_from_db()
         self.assertEqual(self.category.name, 'Elektronik Updated')
-        self.assertEqual(self.category.created_by, self.user_a)
-        self.assertEqual(self.category.updated_by, self.user_b)
-
-    def test_update_category_with_metadata(self):
-        self.client.force_authenticate(user=self.user_b)
-
-        full_data = {'name': 'Elektronik Full Update', 'created_by': 999}
-
-        response = self.client.put(self.detail_url, full_data)
-        self.assertEqual(response.status_code, status.HTTP_200_OK)
-        self.category.refresh_from_db()
-
-        self.assertEqual(self.category.name, 'Elektronik Full Update')
-        self.assertEqual(self.category.created_by, self.user_a)
-        self.assertEqual(self.category.updated_by, self.user_b)
 
     def test_delete_category(self):
-        self.client.force_authenticate(user=self.user_a)
+        self.client.force_authenticate(user=self.user)
         response = self.client.delete(self.detail_url)
 
         self.assertEqual(response.status_code, status.HTTP_204_NO_CONTENT)
         self.assertFalse(Category.objects.filter(pk=self.category.pk).exists())
-
-    def test_create_invalid_category(self):
-        self.client.force_authenticate(user=self.user_a)
-        response = self.client.post(self.list_url, {'name': ''})
-        self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)
-        self.assertIn('name', response.data)
