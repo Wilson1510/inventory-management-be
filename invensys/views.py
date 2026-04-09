@@ -1,13 +1,16 @@
-from rest_framework import viewsets
+from rest_framework import viewsets, status
 from .models import Category, Unit, Product, Customer, Supplier, SalesOrder, PurchaseOrder
 from .serializers import (
     CategorySerializer, UnitSerializer, ProductListSerializer, ProductDetailSerializer,
     CustomerListSerializer, CustomerDetailSerializer, SupplierListSerializer,
-    SupplierDetailSerializer
+    SupplierDetailSerializer, SalesOrderListSerializer, SalesOrderDetailSerializer,
+    PurchaseOrderListSerializer, PurchaseOrderDetailSerializer
 )
 from rest_framework.permissions import IsAuthenticated
 from django.db.models import Count, Max, Sum, DecimalField, Q
 from django.db.models.functions import Coalesce
+from rest_framework.decorators import action
+from rest_framework.response import Response
 
 
 class UserTrackingMixin:
@@ -84,3 +87,73 @@ class SupplierViewSet(UserTrackingMixin, viewsets.ModelViewSet):
         if self.action == 'list':
             return SupplierListSerializer
         return SupplierDetailSerializer
+
+
+class SalesOrderViewSet(UserTrackingMixin, viewsets.ModelViewSet):
+    queryset = SalesOrder.objects.select_related('customer').prefetch_related(
+        'items__product', 'items__unit'
+    )
+
+    def get_serializer_class(self):
+        if self.action == 'list':
+            return SalesOrderListSerializer
+        return SalesOrderDetailSerializer
+
+    @action(detail=True, methods=['post'])
+    def confirm(self, request, pk=None):
+        order = self.get_object()
+        try:
+            order.confirm()
+            return Response(
+                {"detail": "Sales Order berhasil dikonfirmasi."},
+                status=status.HTTP_200_OK
+            )
+        except ValueError as e:
+            return Response({"detail": str(e)}, status=status.HTTP_400_BAD_REQUEST)
+
+    @action(detail=True, methods=['post'])
+    def cancel(self, request, pk=None):
+        order = self.get_object()
+        try:
+            order.cancel()
+            return Response(
+                {"detail": "Sales Order berhasil dibatalkan."},
+                status=status.HTTP_200_OK
+            )
+        except ValueError as e:
+            return Response({"detail": str(e)}, status=status.HTTP_400_BAD_REQUEST)
+
+
+class PurchaseOrderViewSet(UserTrackingMixin, viewsets.ModelViewSet):
+    queryset = PurchaseOrder.objects.select_related('supplier').prefetch_related(
+        'items__product', 'items__unit'
+    )
+
+    def get_serializer_class(self):
+        if self.action == 'list':
+            return PurchaseOrderListSerializer
+        return PurchaseOrderDetailSerializer
+
+    @action(detail=True, methods=['post'])
+    def confirm(self, request, pk=None):
+        order = self.get_object()
+        try:
+            order.confirm()
+            return Response(
+                {"detail": "Purchase Order berhasil dikonfirmasi."},
+                status=status.HTTP_200_OK
+            )
+        except ValueError as e:
+            return Response({"detail": str(e)}, status=status.HTTP_400_BAD_REQUEST)
+
+    @action(detail=True, methods=['post'])
+    def cancel(self, request, pk=None):
+        order = self.get_object()
+        try:
+            order.cancel()
+            return Response(
+                {"detail": "Purchase Order berhasil dibatalkan."},
+                status=status.HTTP_200_OK
+            )
+        except ValueError as e:
+            return Response({"detail": str(e)}, status=status.HTTP_400_BAD_REQUEST)
