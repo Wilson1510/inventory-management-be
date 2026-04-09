@@ -1,6 +1,6 @@
 from rest_framework import serializers
 from ..models import Category
-from ..constants import METADATA_FIELDS, READ_ONLY_FIELDS
+from .utils import METADATA_FIELDS, READ_ONLY_FIELDS
 
 
 class CategorySerializer(serializers.ModelSerializer):

@@ -3,7 +3,7 @@ from rest_framework import serializers
 from ..models import Product, ProductPrice, ProductUnit, Unit, Category
 from .unit import UnitNestedSerializer
 from .category import CategoryNestedSerializer
-from ..constants import METADATA_FIELDS, READ_ONLY_FIELDS
+from .utils import METADATA_FIELDS, READ_ONLY_FIELDS, sync_fk_children
 
 
 class ProductPriceSerializer(serializers.ModelSerializer):
@@ -36,26 +36,6 @@ class ProductUnitSerializer(serializers.ModelSerializer):
         rep = super().to_representation(instance)
         rep['unit'] = UnitNestedSerializer(instance.unit).data
         return rep
-
-
-def _sync_fk_children(parent, rows, *, related_name, model, fk_field='product'):
-    manager = getattr(parent, related_name)
-    existing = {obj.id: obj for obj in manager.all()}
-    keep_ids = {row['id'] for row in rows if row.get('id') is not None}
-
-    for pk in existing.keys() - keep_ids:
-        existing[pk].delete()
-
-    for row in rows:
-        pk = row.get('id')
-        payload = {k: v for k, v in row.items() if k != 'id'}
-        if pk is not None and pk in existing:
-            obj = existing[pk]
-            for attr, value in payload.items():
-                setattr(obj, attr, value)
-            obj.save()
-        else:
-            model.objects.create(**{fk_field: parent}, **payload)
 
 
 class ProductDetailSerializer(serializers.ModelSerializer):
@@ -104,18 +84,20 @@ class ProductDetailSerializer(serializers.ModelSerializer):
             instance.save()
 
             if prices_data is not None:
-                _sync_fk_children(
+                sync_fk_children(
                     instance,
                     prices_data,
                     related_name='prices',
                     model=ProductPrice,
+                    fk_field='product',
                 )
             if units_data is not None:
-                _sync_fk_children(
+                sync_fk_children(
                     instance,
                     units_data,
                     related_name='productunit_set',
                     model=ProductUnit,
+                    fk_field='product',
                 )
 
         return instance
@@ -145,3 +127,9 @@ class ProductListSerializer(serializers.ModelSerializer):
             if price_obj:
                 return price_obj.price
         return None
+
+
+class ProductNestedSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = Product
+        fields = ['id', 'name']

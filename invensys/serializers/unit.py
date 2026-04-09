@@ -1,6 +1,6 @@
 from rest_framework import serializers
 from ..models import Unit
-from ..constants import METADATA_FIELDS, READ_ONLY_FIELDS
+from .utils import METADATA_FIELDS, READ_ONLY_FIELDS
 
 
 class UnitSerializer(serializers.ModelSerializer):

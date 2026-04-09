@@ -1,7 +1,7 @@
 from django.test import TestCase
 from ...models import Category
 from ...serializers import CategorySerializer
-from ...constants import METADATA_FIELDS, READ_ONLY_FIELDS
+from ...serializers.utils import METADATA_FIELDS, READ_ONLY_FIELDS
 from django.contrib.auth import get_user_model
 
 

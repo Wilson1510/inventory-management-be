@@ -1,6 +1,6 @@
 from rest_framework import serializers
 from ..models import Customer, Supplier
-from ..constants import METADATA_FIELDS, READ_ONLY_FIELDS
+from .utils import METADATA_FIELDS, READ_ONLY_FIELDS
 
 
 class CustomerDetailSerializer(serializers.ModelSerializer):
@@ -39,3 +39,15 @@ class SupplierListSerializer(SupplierDetailSerializer):
         fields = SupplierDetailSerializer.Meta.fields + [
             'count_purchase_orders', 'last_purchase_order_date', 'total_purchase_amount'
         ]
+
+
+class CustomerNestedSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = Customer
+        fields = ['id', 'name']
+
+
+class SupplierNestedSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = Supplier
+        fields = ['id', 'name']
