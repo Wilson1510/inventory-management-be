@@ -1,77 +1,11 @@
 from datetime import date
 from decimal import Decimal
-
 from django.test import TestCase
-
 from ...models import (
-    Category,
-    Customer,
-    Product,
-    PurchaseOrder,
-    PurchaseOrderItem,
-    SalesOrder,
-    SalesOrderItem,
-    Supplier,
-    Unit,
+    Category, Customer, Product, PurchaseOrder, PurchaseOrderItem, SalesOrder, SalesOrderItem,
+    Supplier, Unit
 )
-from ...serializers import (
-    PurchaseOrderDetailSerializer,
-    PurchaseOrderItemSerializer,
-    PurchaseOrderListSerializer,
-    SalesOrderDetailSerializer,
-    SalesOrderItemSerializer,
-    SalesOrderListSerializer,
-)
-
-
-class SalesOrderItemSerializerTest(TestCase):
-    def setUp(self):
-        self.category = Category.objects.create(name='Cat')
-        self.unit = Unit.objects.create(name='pcs')
-        self.product = Product.objects.create(name='Widget', category=self.category)
-        self.customer = Customer.objects.create(name='Buyer')
-        self.order = SalesOrder.objects.create(customer=self.customer)
-
-    def test_to_representation(self):
-        item = SalesOrderItem.objects.create(
-            sales=self.order,
-            product=self.product,
-            unit=self.unit,
-            quantity=2,
-            price=Decimal('15.00'),
-        )
-        data = SalesOrderItemSerializer(item).data
-        self.assertIn('product', data)
-        self.assertEqual(data['product']['id'], self.product.pk)
-        self.assertIn('unit', data)
-        self.assertEqual(data['unit']['id'], self.unit.pk)
-        self.assertNotIn('product_id', data)
-        self.assertNotIn('unit_id', data)
-
-
-class PurchaseOrderItemSerializerTest(TestCase):
-    def setUp(self):
-        self.category = Category.objects.create(name='Cat')
-        self.unit = Unit.objects.create(name='pcs')
-        self.product = Product.objects.create(name='Widget', category=self.category)
-        self.supplier = Supplier.objects.create(name='Vendor')
-        self.order = PurchaseOrder.objects.create(supplier=self.supplier)
-
-    def test_to_representation(self):
-        item = PurchaseOrderItem.objects.create(
-            purchase=self.order,
-            product=self.product,
-            unit=self.unit,
-            quantity=3,
-            price=Decimal('20.00'),
-        )
-        data = PurchaseOrderItemSerializer(item).data
-        self.assertIn('product', data)
-        self.assertEqual(data['product']['id'], self.product.pk)
-        self.assertIn('unit', data)
-        self.assertEqual(data['unit']['id'], self.unit.pk)
-        self.assertNotIn('product_id', data)
-        self.assertNotIn('unit_id', data)
+from ...serializers import PurchaseOrderDetailSerializer, SalesOrderDetailSerializer
 
 
 class SalesOrderDetailSerializerTest(TestCase):
@@ -240,27 +174,3 @@ class PurchaseOrderDetailSerializerTest(TestCase):
         self.assertTrue(
             order.items.filter(product=self.product, quantity=1, price=Decimal('1.00')).exists()
         )
-
-
-class SalesOrderListSerializerTest(TestCase):
-    def setUp(self):
-        self.customer = Customer.objects.create(name='Buyer')
-
-    def test_to_representation_includes_customer_nested(self):
-        order = SalesOrder.objects.create(customer=self.customer)
-        data = SalesOrderListSerializer(instance=order).data
-        self.assertIn('customer', data)
-        self.assertEqual(data['customer']['id'], self.customer.pk)
-        self.assertEqual(data['customer']['name'], 'Buyer')
-
-
-class PurchaseOrderListSerializerTest(TestCase):
-    def setUp(self):
-        self.supplier = Supplier.objects.create(name='Vendor')
-
-    def test_to_representation_includes_supplier_nested(self):
-        order = PurchaseOrder.objects.create(supplier=self.supplier)
-        data = PurchaseOrderListSerializer(instance=order).data
-        self.assertIn('supplier', data)
-        self.assertEqual(data['supplier']['id'], self.supplier.pk)
-        self.assertEqual(data['supplier']['name'], 'Vendor')

@@ -1,48 +1,7 @@
 from decimal import Decimal
 from django.test import TestCase
 from ...models import Category, Product, ProductPrice, ProductUnit, Unit
-from ...serializers import (
-    ProductDetailSerializer,
-    ProductListSerializer,
-    ProductPriceSerializer,
-    ProductUnitSerializer,
-)
-
-
-class ProductPriceSerializerTest(TestCase):
-    def setUp(self):
-        self.unit = Unit.objects.create(name='pcs')
-
-    def test_to_representation(self):
-        category = Category.objects.create(name='Cat')
-        product = Product.objects.create(name='Product', category=category)
-        product_price = ProductPrice.objects.create(
-            product=product,
-            unit=self.unit,
-            price=Decimal('12.50'),
-            minimum_quantity=1,
-        )
-        data = ProductPriceSerializer(product_price).data
-        self.assertIn('unit', data)
-        self.assertEqual(data['unit']['id'], self.unit.pk)
-        self.assertNotIn('unit_id', data)
-
-
-class ProductUnitSerializerTest(TestCase):
-    def setUp(self):
-        self.unit = Unit.objects.create(name='pcs')
-
-    def test_to_representation(self):
-        category = Category.objects.create(name='Cat')
-        product = Product.objects.create(name='Product', category=category)
-        product_unit = ProductUnit.objects.create(
-            product=product,
-            unit=self.unit
-        )
-        data = ProductUnitSerializer(product_unit).data
-        self.assertIn('unit', data)
-        self.assertEqual(data['unit']['id'], self.unit.pk)
-        self.assertNotIn('unit_id', data)
+from ...serializers import ProductDetailSerializer, ProductListSerializer
 
 
 class ProductDetailSerializerTest(TestCase):

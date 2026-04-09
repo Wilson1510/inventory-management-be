@@ -11,15 +11,11 @@ class ProductPriceSerializer(serializers.ModelSerializer):
     unit_id = serializers.PrimaryKeyRelatedField(
         queryset=Unit.objects.all(), source='unit', write_only=True
     )
+    unit = UnitNestedSerializer(read_only=True)
 
     class Meta:
         model = ProductPrice
-        fields = ['id', 'price', 'minimum_quantity', 'unit_id']
-
-    def to_representation(self, instance):
-        rep = super().to_representation(instance)
-        rep['unit'] = UnitNestedSerializer(instance.unit).data
-        return rep
+        fields = ['id', 'price', 'minimum_quantity', 'unit_id', 'unit']
 
 
 class ProductUnitSerializer(serializers.ModelSerializer):
@@ -27,15 +23,11 @@ class ProductUnitSerializer(serializers.ModelSerializer):
     unit_id = serializers.PrimaryKeyRelatedField(
         queryset=Unit.objects.all(), source='unit', write_only=True
     )
+    unit = UnitNestedSerializer(read_only=True)
 
     class Meta:
         model = ProductUnit
-        fields = ['id', 'unit_id', 'multiplier', 'is_base_unit']
-
-    def to_representation(self, instance):
-        rep = super().to_representation(instance)
-        rep['unit'] = UnitNestedSerializer(instance.unit).data
-        return rep
+        fields = ['id', 'unit_id', 'multiplier', 'is_base_unit', 'unit']
 
 
 class ProductDetailSerializer(serializers.ModelSerializer):

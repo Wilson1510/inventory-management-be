@@ -15,19 +15,15 @@ class SalesOrderItemSerializer(serializers.ModelSerializer):
     product_id = serializers.PrimaryKeyRelatedField(
         queryset=Product.objects.all(), source='product', write_only=True
     )
+    product = ProductNestedSerializer(read_only=True)
+    unit = UnitNestedSerializer(read_only=True)
     unit_id = serializers.PrimaryKeyRelatedField(
         queryset=Unit.objects.all(), source='unit', write_only=True
     )
 
     class Meta:
         model = SalesOrderItem
-        fields = ['id', 'product_id', 'quantity', 'price', 'unit_id']
-
-    def to_representation(self, instance):
-        rep = super().to_representation(instance)
-        rep['product'] = ProductNestedSerializer(instance.product).data
-        rep['unit'] = UnitNestedSerializer(instance.unit).data
-        return rep
+        fields = ['id', 'product_id', 'quantity', 'price', 'unit_id', 'product', 'unit']
 
 
 class PurchaseOrderItemSerializer(serializers.ModelSerializer):
@@ -35,19 +31,15 @@ class PurchaseOrderItemSerializer(serializers.ModelSerializer):
     product_id = serializers.PrimaryKeyRelatedField(
         queryset=Product.objects.all(), source='product', write_only=True
     )
+    product = ProductNestedSerializer(read_only=True)
+    unit = UnitNestedSerializer(read_only=True)
     unit_id = serializers.PrimaryKeyRelatedField(
         queryset=Unit.objects.all(), source='unit', write_only=True
     )
 
     class Meta:
         model = PurchaseOrderItem
-        fields = ['id', 'product_id', 'quantity', 'price', 'unit_id']
-
-    def to_representation(self, instance):
-        rep = super().to_representation(instance)
-        rep['product'] = ProductNestedSerializer(instance.product).data
-        rep['unit'] = UnitNestedSerializer(instance.unit).data
-        return rep
+        fields = ['id', 'product_id', 'quantity', 'price', 'unit_id', 'product', 'unit']
 
 
 class SalesOrderDetailSerializer(serializers.ModelSerializer):
