@@ -14,20 +14,9 @@
             "name": "Test Category"
         },
         "base_price": 50000,
-        "price": {
-            "id": 1,
-            "price": 55000,
-            "minimum_quantity": 1,
-            "unit": {
-                "id": 1,
-                "name": "pcs"
-            }
-        }, // base unit and minimum quantity 1
+        "price": 55000, // base unit and minimum quantity 1
         "quantity": 4,
-        "unit": {
-            "id": 1,
-            "name": "pcs"
-        }, // base unit
+        "unit": "pcs", // base unit
         "id": 6,
         "created_at": "2026-04-04T06:22:34.514325Z",
         "created_by": 9,
@@ -42,20 +31,9 @@
             "name": "Test Category"
         },
         "base_price": 51000,
-        "price": {
-            "id": 2,
-            "price": 56000,
-            "minimum_quantity": 1,
-            "unit": {
-                "id": 1,
-                "name": "pcs"
-            }
-        },
+        "price": 56000, // base unit and minimum quantity 1
         "quantity": 4,
-        "unit": {
-            "id": 1,
-            "name": "pcs"
-        },
+        "unit": "pcs",
         "id": 7,
         "created_at": "2026-04-04T07:22:34.514325Z",
         "created_by": 10,
