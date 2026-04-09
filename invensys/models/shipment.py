@@ -55,11 +55,12 @@ class Delivery(Shipment):
     )
     delivery_date = models.DateField()
 
-    def done(self):
+    def done(self, user):
+        if user is None:
+            raise ValueError("A user must be provided when marking delivery as done")
         with transaction.atomic():
             self.status = self.Status.DONE
-            # TODO: Add the user who is logged in
-            self.checked_by = None
+            self.checked_by = user
             self.checked_at = timezone.now()
             self._subtract_product_quantity()
             self._adjust_product_base_price_if_stock_is_zero()
@@ -92,11 +93,12 @@ class Receipt(Shipment):
     )
     arrival_date = models.DateField()
 
-    def done(self):
+    def done(self, user):
+        if user is None:
+            raise ValueError("A user must be provided when marking receipt as done")
         with transaction.atomic():
             self.status = self.Status.DONE
-            # TODO: Add the user who is logged in
-            self.checked_by = None
+            self.checked_by = user
             self.checked_at = timezone.now()
             self._add_product_quantity()
             self._adjust_product_base_price()

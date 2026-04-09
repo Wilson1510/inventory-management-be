@@ -1,8 +1,9 @@
+from django.contrib.auth import get_user_model
 from django.test import TestCase
+from django.utils import timezone
 from invensys.models import (
     SalesOrder, SalesOrderItem, Product, Customer, Category, Unit, ProductUnit, Delivery
 )
-from django.utils import timezone
 from datetime import timedelta
 
 
@@ -181,7 +182,8 @@ class SalesOrderModelTest(BaseSaleOrderTest):
             item.quantity_delivered = item.quantity
             item.save()
 
-        self.sales_order.deliveries.first().done()
+        user = get_user_model().objects.create_user(username='so_delivery_done', password='x')
+        self.sales_order.deliveries.first().done(user)
         with self.assertRaises(ValueError):
             self.sales_order.cancel()
 

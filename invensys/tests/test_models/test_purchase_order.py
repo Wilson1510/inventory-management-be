@@ -1,8 +1,9 @@
+from django.contrib.auth import get_user_model
 from django.test import TestCase
+from django.utils import timezone
 from invensys.models import (
     PurchaseOrder, PurchaseOrderItem, Product, Supplier, Category, Unit, ProductUnit, Receipt
 )
-from django.utils import timezone
 from datetime import timedelta
 
 
@@ -180,7 +181,8 @@ class PurchaseOrderModelTest(BasePurchaseOrderTest):
             item.quantity_received = item.quantity
             item.save()
 
-        self.purchase_order.receipts.first().done()
+        user = get_user_model().objects.create_user(username='po_receipt_done', password='x')
+        self.purchase_order.receipts.first().done(user)
         with self.assertRaises(ValueError):
             self.purchase_order.cancel()
 
