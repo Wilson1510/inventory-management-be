@@ -1,10 +1,15 @@
-from rest_framework import viewsets, status
-from .models import Category, Unit, Product, Customer, Supplier, SalesOrder, PurchaseOrder
+from rest_framework import viewsets, status, mixins
+from .models import (
+    Category, Unit, Product, Customer, Supplier, SalesOrder, PurchaseOrder,
+    Delivery, Receipt,
+)
 from .serializers import (
     CategorySerializer, UnitSerializer, ProductListSerializer, ProductDetailSerializer,
     CustomerListSerializer, CustomerDetailSerializer, SupplierListSerializer,
     SupplierDetailSerializer, SalesOrderListSerializer, SalesOrderDetailSerializer,
-    PurchaseOrderListSerializer, PurchaseOrderDetailSerializer
+    PurchaseOrderListSerializer, PurchaseOrderDetailSerializer,
+    DeliveryListSerializer, DeliveryDetailSerializer,
+    ReceiptListSerializer, ReceiptDetailSerializer,
 )
 from rest_framework.permissions import IsAuthenticated
 from django.db.models import Count, Max, Sum, DecimalField, Q
@@ -154,6 +159,72 @@ class PurchaseOrderViewSet(UserTrackingMixin, viewsets.ModelViewSet):
             return Response(
                 {"detail": "Purchase Order berhasil dibatalkan."},
                 status=status.HTTP_200_OK
+            )
+        except ValueError as e:
+            return Response({"detail": str(e)}, status=status.HTTP_400_BAD_REQUEST)
+
+
+class DeliveryViewSet(UserTrackingMixin, mixins.UpdateModelMixin, viewsets.ReadOnlyModelViewSet):
+    queryset = Delivery.objects.select_related(
+        'sales_order', 'sales_order__customer'
+    ).prefetch_related('items__product', 'items__unit')
+
+    def get_serializer_class(self):
+        if self.action == 'list':
+            return DeliveryListSerializer
+        return DeliveryDetailSerializer
+
+    @action(detail=True, methods=['post'])
+    def done(self, request, pk=None):
+        delivery = self.get_object()
+        try:
+            delivery.done(request.user)
+            return Response(
+                {"detail": "Delivery berhasil diselesaikan."}, status=status.HTTP_200_OK
+            )
+        except ValueError as e:
+            return Response({"detail": str(e)}, status=status.HTTP_400_BAD_REQUEST)
+
+    @action(detail=True, methods=['post'])
+    def cancel(self, request, pk=None):
+        delivery = self.get_object()
+        try:
+            delivery.cancel()
+            return Response(
+                {"detail": "Delivery berhasil dibatalkan."}, status=status.HTTP_200_OK
+            )
+        except ValueError as e:
+            return Response({"detail": str(e)}, status=status.HTTP_400_BAD_REQUEST)
+
+
+class ReceiptViewSet(UserTrackingMixin, mixins.UpdateModelMixin, viewsets.ReadOnlyModelViewSet):
+    queryset = Receipt.objects.select_related(
+        'purchase_order', 'purchase_order__supplier'
+    ).prefetch_related('items__product', 'items__unit')
+
+    def get_serializer_class(self):
+        if self.action == 'list':
+            return ReceiptListSerializer
+        return ReceiptDetailSerializer
+
+    @action(detail=True, methods=['post'])
+    def done(self, request, pk=None):
+        receipt = self.get_object()
+        try:
+            receipt.done(request.user)
+            return Response(
+                {"detail": "Receipt berhasil diselesaikan."}, status=status.HTTP_200_OK
+            )
+        except ValueError as e:
+            return Response({"detail": str(e)}, status=status.HTTP_400_BAD_REQUEST)
+
+    @action(detail=True, methods=['post'])
+    def cancel(self, request, pk=None):
+        receipt = self.get_object()
+        try:
+            receipt.cancel()
+            return Response(
+                {"detail": "Receipt berhasil dibatalkan."}, status=status.HTTP_200_OK
             )
         except ValueError as e:
             return Response({"detail": str(e)}, status=status.HTTP_400_BAD_REQUEST)

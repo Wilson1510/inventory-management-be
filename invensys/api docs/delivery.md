@@ -1,5 +1,7 @@
 # API Endpoints and Payload
 
+* Receipt mirrors Delivery, mapped to purchase_order_id and arrival_date
+
 ## List
 **Endpoint:** `GET /api/deliveries/`
 

@@ -146,3 +146,15 @@ class PurchaseOrderListSerializer(serializers.ModelSerializer):
     class Meta:
         model = PurchaseOrder
         fields = ['number', 'status', 'total', 'supplier', 'arrival_date'] + METADATA_FIELDS
+
+
+class SalesOrderNestedSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = SalesOrder
+        fields = ['id', 'number']
+
+
+class PurchaseOrderNestedSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = PurchaseOrder
+        fields = ['id', 'number']
