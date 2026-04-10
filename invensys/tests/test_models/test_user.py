@@ -40,3 +40,19 @@ class UserModelTest(TestCase):
 
     def test_db_table(self):
         self.assertEqual(User._meta.db_table, 'invensys_user')
+
+    def test_name_property_empty_when_no_first_or_last(self):
+        user = User(username='u1', first_name='', last_name='')
+        self.assertEqual(user.name, '')
+
+    def test_name_property_first_name_only(self):
+        user = User(username='u1', first_name='Ada', last_name='')
+        self.assertEqual(user.name, 'Ada')
+
+    def test_name_property_last_name_only(self):
+        user = User(username='u1', first_name='', last_name='Lovelace')
+        self.assertEqual(user.name, 'Lovelace')
+
+    def test_name_property_joins_first_and_last(self):
+        user = User(username='u1', first_name='Ada', last_name='Lovelace')
+        self.assertEqual(user.name, 'Ada Lovelace')

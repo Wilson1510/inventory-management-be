@@ -1,9 +1,12 @@
 from rest_framework import viewsets, status, mixins
+from django.contrib.auth import get_user_model
 from .models import (
     Category, Unit, Product, Customer, Supplier, SalesOrder, PurchaseOrder,
     Delivery, Receipt,
 )
+from .permissions import IsAdmin
 from .serializers import (
+    UserSerializer, UserMeSerializer, UserPasswordResetSerializer, UserChangePasswordSerializer,
     CategorySerializer, UnitSerializer, ProductListSerializer, ProductDetailSerializer,
     CustomerListSerializer, CustomerDetailSerializer, SupplierListSerializer,
     SupplierDetailSerializer, SalesOrderListSerializer, SalesOrderDetailSerializer,
@@ -28,6 +31,51 @@ class UserTrackingMixin:
 
     def perform_update(self, serializer):
         serializer.save(updated_by=self.request.user)
+
+
+User = get_user_model()
+
+
+class UserViewSet(viewsets.ModelViewSet):
+    queryset = User.objects.all().order_by('id')
+    serializer_class = UserSerializer
+    permission_classes = [IsAuthenticated, IsAdmin]
+
+    def get_permissions(self):
+        if getattr(self, 'action', None) in ('me', 'change_password'):
+            return [IsAuthenticated()]
+        return super().get_permissions()
+
+    @action(detail=False, methods=['get', 'patch'], url_path='me')
+    def me(self, request):
+        if request.method == 'GET':
+            return Response(UserMeSerializer(request.user).data)
+        serializer = UserMeSerializer(
+            request.user, data=request.data, partial=True
+        )
+        serializer.is_valid(raise_exception=True)
+        serializer.save()
+        return Response(serializer.data)
+
+    @action(detail=True, methods=['patch'], url_path='reset-password')
+    def reset_password(self, request, pk=None):
+        user = self.get_object()
+        serializer = UserPasswordResetSerializer(data=request.data)
+        serializer.is_valid(raise_exception=True)
+        user.set_password(serializer.validated_data['new_password'])
+        user.save(update_fields=['password'])
+        return Response({'message': 'Password reset successfully'})
+
+    @action(detail=False, methods=['patch'], url_path='me/change-password')
+    def change_password(self, request):
+        serializer = UserChangePasswordSerializer(
+            data=request.data, context={'request': request}
+        )
+        serializer.is_valid(raise_exception=True)
+        user = request.user
+        user.set_password(serializer.validated_data['new_password'])
+        user.save(update_fields=['password'])
+        return Response({'message': 'Password changed successfully'})
 
 
 class CategoryViewSet(UserTrackingMixin, viewsets.ModelViewSet):

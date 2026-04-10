@@ -27,5 +27,10 @@ class User(AbstractUser):
 
     objects = UserManager()
 
+    @property
+    def name(self) -> str:
+        parts = [self.first_name, self.last_name]
+        return ' '.join(p for p in parts if p).strip()
+
     class Meta:
         db_table = 'invensys_user'
