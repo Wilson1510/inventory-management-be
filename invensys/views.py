@@ -10,7 +10,9 @@ from .serializers import (
     PurchaseOrderListSerializer, PurchaseOrderDetailSerializer,
     DeliveryListSerializer, DeliveryDetailSerializer,
     ReceiptListSerializer, ReceiptDetailSerializer,
+    DashboardMetricsSerializer, DashboardTopDataSerializer,
 )
+from .services.dashboard import metrics_payload, top_data_payload
 from rest_framework.permissions import IsAuthenticated
 from django.db.models import Count, Max, Sum, DecimalField, Q
 from django.db.models.functions import Coalesce
@@ -228,3 +230,15 @@ class ReceiptViewSet(UserTrackingMixin, mixins.UpdateModelMixin, viewsets.ReadOn
             )
         except ValueError as e:
             return Response({"detail": str(e)}, status=status.HTTP_400_BAD_REQUEST)
+
+
+class DashboardViewSet(viewsets.ViewSet):
+    permission_classes = [IsAuthenticated]
+
+    @action(detail=False, methods=['get'], url_path='metrics')
+    def metrics(self, request):
+        return Response(DashboardMetricsSerializer(instance=metrics_payload()).data)
+
+    @action(detail=False, methods=['get'], url_path='top-data')
+    def top_data(self, request):
+        return Response(DashboardTopDataSerializer(instance=top_data_payload()).data)
