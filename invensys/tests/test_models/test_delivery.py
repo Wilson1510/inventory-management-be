@@ -45,6 +45,14 @@ class DeliveryModelTest(BaseSaleOrderTest):
         self.products[0].refresh_from_db()
         self.assertEqual(self.products[0].quantity, 9)
 
+    def test_base_unit_cost_snapshot_set_when_delivery_is_done(self):
+        self.fill_quantity_delivered()
+        expected = {p.id: p.base_price for p in self.products}
+        self.delivery.done(self.check_user)
+        for item in self.delivery.items.all():
+            item.refresh_from_db()
+            self.assertEqual(item.base_unit_cost_snapshot, expected[item.product_id])
+
     def test_product_base_price_is_zero_when_delivery_is_done_and_product_quantity_is_zero(self):
         self.fill_quantity_delivered()
         self.assertEqual(self.products[1].base_price, 200)

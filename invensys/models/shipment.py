@@ -59,6 +59,10 @@ class Delivery(Shipment):
         if user is None:
             raise ValueError("A user must be provided when marking delivery as done")
         with transaction.atomic():
+            items = list(self.items.select_related("product").all())
+            for item in items:
+                item.base_unit_cost_snapshot = item.product.base_price
+            DeliveryItem.objects.bulk_update(items, ["base_unit_cost_snapshot"])
             self.status = self.Status.DONE
             self.checked_by = user
             self.checked_at = timezone.now()
@@ -137,6 +141,9 @@ class ShipmentItem(BaseModel):
 class DeliveryItem(ShipmentItem):
     delivery = models.ForeignKey(Delivery, on_delete=models.CASCADE, related_name='items')
     quantity_delivered = models.IntegerField(default=0)
+    base_unit_cost_snapshot = models.DecimalField(
+        max_digits=10, decimal_places=2, null=True, blank=True
+    )
 
     def validate_quantity_delivered_less_than_or_equal_to_quantity(self):
         if self.quantity_delivered > self.quantity:
