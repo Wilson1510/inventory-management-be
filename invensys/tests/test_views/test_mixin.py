@@ -18,7 +18,7 @@ class UserTrackingMixinTest(APITestCase):
 
     def test_unauthenticated_access_denied(self):
         response = self.client.get(self.list_url)
-        self.assertEqual(response.status_code, status.HTTP_403_FORBIDDEN)
+        self.assertEqual(response.status_code, status.HTTP_401_UNAUTHORIZED)
 
     def test_create_object_sets_tracking_fields(self):
         self.client.force_authenticate(user=self.user_a)

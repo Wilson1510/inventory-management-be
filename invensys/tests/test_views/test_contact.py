@@ -15,7 +15,7 @@ class CustomerViewSetTest(APITestCase):
 
     def test_unauthenticated_access_denied(self):
         response = self.client.get(self.list_url)
-        self.assertEqual(response.status_code, status.HTTP_403_FORBIDDEN)
+        self.assertEqual(response.status_code, status.HTTP_401_UNAUTHORIZED)
 
     def test_get_customers_list(self):
         SalesOrder.objects.create(
@@ -82,7 +82,7 @@ class SupplierViewSetTest(APITestCase):
 
     def test_unauthenticated_access_denied(self):
         response = self.client.get(self.list_url)
-        self.assertEqual(response.status_code, status.HTTP_403_FORBIDDEN)
+        self.assertEqual(response.status_code, status.HTTP_401_UNAUTHORIZED)
 
     def test_get_suppliers_list(self):
         PurchaseOrder.objects.create(

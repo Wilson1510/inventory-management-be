@@ -35,9 +35,9 @@ class UserViewSetTest(APITestCase):
         self.reset_other = reverse('user-reset-password', kwargs={'pk': self.other.pk})
         self.change_password_url = reverse('user-change-password')
 
-    def test_unauthenticated_list_forbidden(self):
+    def test_unauthenticated_list_unauthorized(self):
         response = self.client.get(self.list_url)
-        self.assertEqual(response.status_code, status.HTTP_403_FORBIDDEN)
+        self.assertEqual(response.status_code, status.HTTP_401_UNAUTHORIZED)
 
     def test_staff_list_users_forbidden(self):
         self.client.force_authenticate(user=self.staff)
@@ -85,9 +85,9 @@ class UserViewSetTest(APITestCase):
         self.assertEqual(response.data['name'], 'Staff Member')
         self.assertEqual(response.data['role'], User.Role.STAFF)
 
-    def test_me_get_unauthenticated_forbidden(self):
+    def test_me_get_unauthenticated_unauthorized(self):
         response = self.client.get(self.me_url)
-        self.assertEqual(response.status_code, status.HTTP_403_FORBIDDEN)
+        self.assertEqual(response.status_code, status.HTTP_401_UNAUTHORIZED)
 
     def test_me_patch_profile(self):
         self.client.force_authenticate(user=self.staff)

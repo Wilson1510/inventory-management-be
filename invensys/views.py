@@ -5,6 +5,7 @@ from .models import (
     Delivery, Receipt,
 )
 from .permissions import IsAdmin
+from rest_framework_simplejwt.views import TokenObtainPairView
 from .serializers import (
     UserSerializer, UserMeSerializer, UserPasswordResetSerializer, UserChangePasswordSerializer,
     CategorySerializer, UnitSerializer, ProductListSerializer, ProductDetailSerializer,
@@ -21,6 +22,11 @@ from django.db.models import Count, Max, Sum, DecimalField, Q
 from django.db.models.functions import Coalesce
 from rest_framework.decorators import action
 from rest_framework.response import Response
+from rest_framework_simplejwt.serializers import TokenObtainPairSerializer
+
+
+class LoginView(TokenObtainPairView):
+    serializer_class = TokenObtainPairSerializer
 
 
 class UserTrackingMixin:

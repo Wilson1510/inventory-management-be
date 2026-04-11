@@ -21,12 +21,12 @@ class DashboardAPITest(APITestCase):
     def test_metrics_requires_auth(self):
         self.client.force_authenticate(user=None)
         r = self.client.get(self.metrics_url)
-        self.assertEqual(r.status_code, status.HTTP_403_FORBIDDEN)
+        self.assertEqual(r.status_code, status.HTTP_401_UNAUTHORIZED)
 
     def test_top_data_requires_auth(self):
         self.client.force_authenticate(user=None)
         r = self.client.get(self.top_url)
-        self.assertEqual(r.status_code, status.HTTP_403_FORBIDDEN)
+        self.assertEqual(r.status_code, status.HTTP_401_UNAUTHORIZED)
 
     def test_metrics_empty_returns_zero_values(self):
         r = self.client.get(self.metrics_url)

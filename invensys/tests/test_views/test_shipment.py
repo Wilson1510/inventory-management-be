@@ -99,7 +99,7 @@ class DeliveryViewSetTest(APITestCase):
 
     def test_unauthenticated_access_denied(self):
         response = self.client.get(self.list_url)
-        self.assertEqual(response.status_code, status.HTTP_403_FORBIDDEN)
+        self.assertEqual(response.status_code, status.HTTP_401_UNAUTHORIZED)
 
     def test_post_create_not_allowed(self):
         self.client.force_authenticate(user=self.user_a)
@@ -281,7 +281,7 @@ class ReceiptViewSetTest(APITestCase):
 
     def test_unauthenticated_access_denied(self):
         response = self.client.get(self.list_url)
-        self.assertEqual(response.status_code, status.HTTP_403_FORBIDDEN)
+        self.assertEqual(response.status_code, status.HTTP_401_UNAUTHORIZED)
 
     def test_post_create_not_allowed(self):
         self.client.force_authenticate(user=self.user_a)
