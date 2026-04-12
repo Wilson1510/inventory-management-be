@@ -17,12 +17,16 @@ def generate_sku_number():
 
 
 class Product(BaseModel):
-    name = models.CharField(max_length=255)
+    name = models.CharField(max_length=255, db_index=True)
     slug = models.SlugField(unique=True)
-    sku_number = models.CharField(max_length=150, unique=True, default=generate_sku_number)
+    sku_number = models.CharField(
+        max_length=150, unique=True, default=generate_sku_number, db_index=True
+    )
     base_price = models.DecimalField(max_digits=10, decimal_places=2, default=0)
     quantity = models.IntegerField(default=0)
-    category = models.ForeignKey(Category, on_delete=models.CASCADE, related_name='products')
+    category = models.ForeignKey(
+        Category, on_delete=models.CASCADE, related_name='products', db_index=True
+    )
     units = models.ManyToManyField(Unit, through='ProductUnit', related_name='products')
 
     def save(self, *args, **kwargs):
@@ -35,7 +39,9 @@ class Product(BaseModel):
 
 
 class ProductPrice(BaseModel):
-    product = models.ForeignKey(Product, on_delete=models.CASCADE, related_name='prices')
+    product = models.ForeignKey(
+        Product, on_delete=models.CASCADE, related_name='prices', db_index=True
+    )
     price = models.DecimalField(max_digits=10, decimal_places=2)
     minimum_quantity = models.IntegerField(default=1)
     unit = models.ForeignKey(Unit, on_delete=models.CASCADE, related_name='product_prices')

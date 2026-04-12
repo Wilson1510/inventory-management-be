@@ -10,13 +10,13 @@ class BaseContact(BaseModel):
         PT = 'pt', 'PT'
         LAINNYA = 'lainnya', 'Lainnya'
 
-    name = models.CharField(max_length=255)
+    name = models.CharField(max_length=255, db_index=True)
     business_entity = models.CharField(
         max_length=100,
         choices=BusinessEntity.choices,
         default=BusinessEntity.PERORANGAN
     )
-    phone = models.CharField(max_length=20, unique=True, null=True, blank=True)
+    phone = models.CharField(max_length=20, unique=True, null=True, blank=True, db_index=True)
     email = models.EmailField(max_length=255, unique=True, null=True, blank=True)
     address = models.TextField(null=True, blank=True)
 

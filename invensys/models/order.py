@@ -14,7 +14,7 @@ class BaseOrder(BaseModel):
         CONFIRMED = 'confirmed', 'Confirmed'
         CANCELLED = 'cancelled', 'Cancelled'
 
-    number = models.CharField(max_length=150, unique=True, null=True, blank=True)
+    number = models.CharField(max_length=150, unique=True, null=True, blank=True, db_index=True)
     status = models.CharField(max_length=100, choices=Status.choices, default=Status.DRAFT)
     total = models.DecimalField(max_digits=10, decimal_places=2, default=0)
 
