@@ -111,6 +111,43 @@ PATCH send only changed fields
 }
 ```
 
+## Get Profile Info
+**Endpoint:** `GET /api/users/me/`
+
+**Response:**
+```json
+{
+    "id": 2,
+    "username": "wilson",
+    "email": "wilson.soeparman@gmail.com",
+    "name": "Wilson Soeparman",
+    "role": "staff",
+    "is_active": true
+}
+```
+
+## Update Profile Info
+**Endpoint:** `PATCH /api/users/me/`
+**Request Body:**
+```json
+{
+    "username": "wilson",
+    "email": "wilson.soeparman@gmail.com",
+    "name": "Wilson Soeparman"
+}
+```
+**Response:**
+```json
+{
+    "id": 2,
+    "username": "wilson",
+    "email": "wilson.soeparman@gmail.com",
+    "name": "Wilson Soeparman",
+    "role": "staff",
+    "is_active": true
+}
+```
+
 ## Change Password
 **Endpoint:** `PATCH /api/users/me/change-password/`
 **Request Body:**
