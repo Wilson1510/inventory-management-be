@@ -9,17 +9,17 @@ from ...models import Category, Product, ProductPrice, ProductUnit, Unit
 class ProductViewSetTest(APITestCase):
     def setUp(self):
         User = get_user_model()
-        self.user_a = User.objects.create_user(username='usera', password='password123')
-        self.user_b = User.objects.create_user(username='userb', password='password123')
+        self.admin_a = User.objects.create_superuser(username='admin_a', password='password123')
+        self.admin_b = User.objects.create_superuser(username='admin_b', password='password123')
 
-        self.category = Category.objects.create(name='Elektronik', created_by=self.user_a)
+        self.category = Category.objects.create(name='Elektronik', created_by=self.admin_a)
         self.unit = Unit.objects.create(name='pcs')
         self.unit2 = Unit.objects.create(name='pcs2')
         self.product = Product.objects.create(
             name='Mouse',
             category=self.category,
-            created_by=self.user_a,
-            updated_by=self.user_a,
+            created_by=self.admin_a,
+            updated_by=self.admin_a,
         )
         self.pu1 = ProductUnit.objects.create(
             product=self.product,
@@ -53,8 +53,22 @@ class ProductViewSetTest(APITestCase):
         response = self.client.get(self.list_url)
         self.assertEqual(response.status_code, status.HTTP_401_UNAUTHORIZED)
 
+    def test_staff_read_only(self):
+        User = get_user_model()
+        self.staff = User.objects.create_user(username='staff', password='password123')
+        self.client.force_authenticate(user=self.staff)
+
+        response = self.client.get(self.list_url)
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+
+        response = self.client.post(self.list_url, {'name': 'Keyboard'}, format='json')
+        self.assertEqual(response.status_code, status.HTTP_403_FORBIDDEN)
+
+        response = self.client.delete(self.detail_url)
+        self.assertEqual(response.status_code, status.HTTP_403_FORBIDDEN)
+
     def test_get_products_list(self):
-        self.client.force_authenticate(user=self.user_a)
+        self.client.force_authenticate(user=self.admin_a)
         response = self.client.get(self.list_url)
 
         self.assertEqual(response.status_code, status.HTTP_200_OK)
@@ -67,7 +81,7 @@ class ProductViewSetTest(APITestCase):
         self.assertEqual(Decimal(str(row['price'])), Decimal('25.00'))
 
     def test_get_product_detail(self):
-        self.client.force_authenticate(user=self.user_a)
+        self.client.force_authenticate(user=self.admin_a)
         response = self.client.get(self.detail_url)
 
         self.assertEqual(response.status_code, status.HTTP_200_OK)
@@ -80,7 +94,7 @@ class ProductViewSetTest(APITestCase):
         self.assertEqual(response.data['units'][0]['unit']['name'], 'pcs')
 
     def test_create_product(self):
-        self.client.force_authenticate(user=self.user_a)
+        self.client.force_authenticate(user=self.admin_a)
         payload = {
             'name': 'Keyboard',
             'category_id': self.category.pk,
@@ -100,7 +114,7 @@ class ProductViewSetTest(APITestCase):
         self.assertEqual(created.productunit_set.count(), 1)
 
     def test_update_product(self):
-        self.client.force_authenticate(user=self.user_b)
+        self.client.force_authenticate(user=self.admin_b)
         payload = {
             'name': 'Mouse Wireless',
             'category_id': self.category.pk,
@@ -151,7 +165,7 @@ class ProductViewSetTest(APITestCase):
         self.assertTrue(self.product.productunit_set.filter(pk=new_pu.pk).exists())
 
     def test_partial_update_product(self):
-        self.client.force_authenticate(user=self.user_b)
+        self.client.force_authenticate(user=self.admin_b)
         payload = {
             'name': 'Mouse Wireless',
         }
@@ -163,14 +177,14 @@ class ProductViewSetTest(APITestCase):
         self.assertEqual(self.product.productunit_set.count(), 2)
 
     def test_delete_product(self):
-        self.client.force_authenticate(user=self.user_a)
+        self.client.force_authenticate(user=self.admin_a)
         response = self.client.delete(self.detail_url)
 
         self.assertEqual(response.status_code, status.HTTP_204_NO_CONTENT)
         self.assertFalse(Product.objects.filter(pk=self.product.pk).exists())
 
     def test_invalid_create_product(self):
-        self.client.force_authenticate(user=self.user_a)
+        self.client.force_authenticate(user=self.admin_a)
         payload = {
             'name': 'Invalid Product',
             'category_id': 9999,

@@ -8,10 +8,10 @@ from ...models import Category
 class UserTrackingMixinTest(APITestCase):
     def setUp(self):
         User = get_user_model()
-        self.user_a = User.objects.create_user(username='usera', password='password123')
-        self.user_b = User.objects.create_user(username='userb', password='password123')
+        self.admin_a = User.objects.create_superuser(username='admin_a', password='password123')
+        self.admin_b = User.objects.create_superuser(username='admin_b', password='password123')
 
-        self.category = Category.objects.create(name='Elektronik', created_by=self.user_a)
+        self.category = Category.objects.create(name='Elektronik', created_by=self.admin_a)
 
         self.list_url = reverse('category-list')
         self.detail_url = reverse('category-detail', kwargs={'pk': self.category.pk})
@@ -20,8 +20,15 @@ class UserTrackingMixinTest(APITestCase):
         response = self.client.get(self.list_url)
         self.assertEqual(response.status_code, status.HTTP_401_UNAUTHORIZED)
 
+    def test_staff_access_denied(self):
+        User = get_user_model()
+        self.staff = User.objects.create_user(username='staff', password='password123')
+        self.client.force_authenticate(user=self.staff)
+        response = self.client.get(self.list_url)
+        self.assertEqual(response.status_code, status.HTTP_403_FORBIDDEN)
+
     def test_create_object_sets_tracking_fields(self):
-        self.client.force_authenticate(user=self.user_a)
+        self.client.force_authenticate(user=self.admin_a)
         data = {'name': 'Pakaian'}
 
         response = self.client.post(self.list_url, data)
@@ -29,11 +36,11 @@ class UserTrackingMixinTest(APITestCase):
         self.assertEqual(response.status_code, status.HTTP_201_CREATED)
 
         new_category = Category.objects.get(name='Pakaian')
-        self.assertEqual(new_category.created_by, self.user_a)
-        self.assertEqual(new_category.updated_by, self.user_a)
+        self.assertEqual(new_category.created_by, self.admin_a)
+        self.assertEqual(new_category.updated_by, self.admin_a)
 
     def test_update_object_changes_only_updated_by(self):
-        self.client.force_authenticate(user=self.user_b)
+        self.client.force_authenticate(user=self.admin_b)
         data = {'name': 'Elektronik Updated'}
 
         response = self.client.patch(self.detail_url, data)
@@ -42,11 +49,11 @@ class UserTrackingMixinTest(APITestCase):
 
         self.category.refresh_from_db()
         self.assertEqual(self.category.name, 'Elektronik Updated')
-        self.assertEqual(self.category.created_by, self.user_a)
-        self.assertEqual(self.category.updated_by, self.user_b)
+        self.assertEqual(self.category.created_by, self.admin_a)
+        self.assertEqual(self.category.updated_by, self.admin_b)
 
     def test_update_object_with_metadata(self):
-        self.client.force_authenticate(user=self.user_b)
+        self.client.force_authenticate(user=self.admin_b)
 
         full_data = {'name': 'Elektronik Full Update', 'created_by': 999}
 
@@ -55,5 +62,5 @@ class UserTrackingMixinTest(APITestCase):
         self.category.refresh_from_db()
 
         self.assertEqual(self.category.name, 'Elektronik Full Update')
-        self.assertEqual(self.category.created_by, self.user_a)
-        self.assertEqual(self.category.updated_by, self.user_b)
+        self.assertEqual(self.category.created_by, self.admin_a)
+        self.assertEqual(self.category.updated_by, self.admin_b)

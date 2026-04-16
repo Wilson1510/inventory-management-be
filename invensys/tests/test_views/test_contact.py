@@ -8,7 +8,7 @@ from ...models import Customer, Supplier, SalesOrder, PurchaseOrder
 class CustomerViewSetTest(APITestCase):
     def setUp(self):
         User = get_user_model()
-        self.user = User.objects.create_user(username='user', password='password123')
+        self.admin = User.objects.create_superuser(username='admin', password='password123')
         self.customer = Customer.objects.create(name='Test Customer')
         self.list_url = reverse('customer-list')
         self.detail_url = reverse('customer-detail', kwargs={'pk': self.customer.pk})
@@ -16,6 +16,13 @@ class CustomerViewSetTest(APITestCase):
     def test_unauthenticated_access_denied(self):
         response = self.client.get(self.list_url)
         self.assertEqual(response.status_code, status.HTTP_401_UNAUTHORIZED)
+
+    def test_staff_access_denied(self):
+        User = get_user_model()
+        self.staff = User.objects.create_user(username='staff', password='password123')
+        self.client.force_authenticate(user=self.staff)
+        response = self.client.get(self.list_url)
+        self.assertEqual(response.status_code, status.HTTP_403_FORBIDDEN)
 
     def test_get_customers_list(self):
         SalesOrder.objects.create(
@@ -30,7 +37,7 @@ class CustomerViewSetTest(APITestCase):
         SalesOrder.objects.create(
             customer=self.customer, total=4000000, status=SalesOrder.Status.CANCELLED
         )
-        self.client.force_authenticate(user=self.user)
+        self.client.force_authenticate(user=self.admin)
         response = self.client.get(self.list_url)
         self.assertEqual(response.status_code, status.HTTP_200_OK)
         self.assertEqual(response.data[0]['count_sale_orders'], 2)
@@ -41,13 +48,13 @@ class CustomerViewSetTest(APITestCase):
         )
 
     def test_get_customer_detail(self):
-        self.client.force_authenticate(user=self.user)
+        self.client.force_authenticate(user=self.admin)
         response = self.client.get(self.detail_url)
         self.assertEqual(response.status_code, status.HTTP_200_OK)
         self.assertEqual(response.data['name'], self.customer.name)
 
     def test_create_customer(self):
-        self.client.force_authenticate(user=self.user)
+        self.client.force_authenticate(user=self.admin)
         data = {'name': 'Test Customer 2'}
         response = self.client.post(self.list_url, data)
 
@@ -57,7 +64,7 @@ class CustomerViewSetTest(APITestCase):
         self.assertEqual(new_customer.name, 'Test Customer 2')
 
     def test_update_customer(self):
-        self.client.force_authenticate(user=self.user)
+        self.client.force_authenticate(user=self.admin)
         data = {'name': 'Test Customer Updated'}
         response = self.client.patch(self.detail_url, data)
         self.assertEqual(response.status_code, status.HTTP_200_OK)
@@ -66,7 +73,7 @@ class CustomerViewSetTest(APITestCase):
         self.assertEqual(new_customer.name, 'Test Customer Updated')
 
     def test_delete_customer(self):
-        self.client.force_authenticate(user=self.user)
+        self.client.force_authenticate(user=self.admin)
         response = self.client.delete(self.detail_url)
         self.assertEqual(response.status_code, status.HTTP_204_NO_CONTENT)
         self.assertFalse(Customer.objects.filter(pk=self.customer.pk).exists())
@@ -75,7 +82,7 @@ class CustomerViewSetTest(APITestCase):
 class SupplierViewSetTest(APITestCase):
     def setUp(self):
         User = get_user_model()
-        self.user = User.objects.create_user(username='user', password='password123')
+        self.admin = User.objects.create_superuser(username='admin', password='password123')
         self.supplier = Supplier.objects.create(name='Test Supplier')
         self.list_url = reverse('supplier-list')
         self.detail_url = reverse('supplier-detail', kwargs={'pk': self.supplier.pk})
@@ -83,6 +90,13 @@ class SupplierViewSetTest(APITestCase):
     def test_unauthenticated_access_denied(self):
         response = self.client.get(self.list_url)
         self.assertEqual(response.status_code, status.HTTP_401_UNAUTHORIZED)
+
+    def test_staff_access_denied(self):
+        User = get_user_model()
+        self.staff = User.objects.create_user(username='staff', password='password123')
+        self.client.force_authenticate(user=self.staff)
+        response = self.client.get(self.list_url)
+        self.assertEqual(response.status_code, status.HTTP_403_FORBIDDEN)
 
     def test_get_suppliers_list(self):
         PurchaseOrder.objects.create(
@@ -97,7 +111,7 @@ class SupplierViewSetTest(APITestCase):
         PurchaseOrder.objects.create(
             supplier=self.supplier, total=4000000, status=PurchaseOrder.Status.CANCELLED
         )
-        self.client.force_authenticate(user=self.user)
+        self.client.force_authenticate(user=self.admin)
         response = self.client.get(self.list_url)
         self.assertEqual(response.status_code, status.HTTP_200_OK)
         self.assertEqual(response.data[0]['count_purchase_orders'], 2)
@@ -108,13 +122,13 @@ class SupplierViewSetTest(APITestCase):
         )
 
     def test_get_supplier_detail(self):
-        self.client.force_authenticate(user=self.user)
+        self.client.force_authenticate(user=self.admin)
         response = self.client.get(self.detail_url)
         self.assertEqual(response.status_code, status.HTTP_200_OK)
         self.assertEqual(response.data['name'], self.supplier.name)
 
     def test_create_supplier(self):
-        self.client.force_authenticate(user=self.user)
+        self.client.force_authenticate(user=self.admin)
         data = {'name': 'Test Supplier 2'}
         response = self.client.post(self.list_url, data)
 
@@ -124,7 +138,7 @@ class SupplierViewSetTest(APITestCase):
         self.assertEqual(new_supplier.name, 'Test Supplier 2')
 
     def test_update_supplier(self):
-        self.client.force_authenticate(user=self.user)
+        self.client.force_authenticate(user=self.admin)
         data = {'name': 'Test Supplier Updated'}
         response = self.client.patch(self.detail_url, data)
         self.assertEqual(response.status_code, status.HTTP_200_OK)
@@ -133,7 +147,7 @@ class SupplierViewSetTest(APITestCase):
         self.assertEqual(new_supplier.name, 'Test Supplier Updated')
 
     def test_delete_supplier(self):
-        self.client.force_authenticate(user=self.user)
+        self.client.force_authenticate(user=self.admin)
         response = self.client.delete(self.detail_url)
         self.assertEqual(response.status_code, status.HTTP_204_NO_CONTENT)
         self.assertFalse(Supplier.objects.filter(pk=self.supplier.pk).exists())

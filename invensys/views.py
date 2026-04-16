@@ -4,7 +4,6 @@ from .models import (
     Category, Unit, Product, Customer, Supplier, SalesOrder, PurchaseOrder,
     Delivery, Receipt,
 )
-from .permissions import IsAdmin
 from rest_framework_simplejwt.views import TokenObtainPairView
 from .serializers import (
     UserSerializer, UserMeSerializer, UserPasswordResetSerializer, UserChangePasswordSerializer,
@@ -18,6 +17,7 @@ from .serializers import (
 )
 from .services.dashboard import metrics_payload, top_data_payload
 from rest_framework.permissions import IsAuthenticated
+from .permissions import IsAdmin, IsAdminOrReadOnly
 from django.db.models import Count, Max, Sum, DecimalField, Q
 from django.db.models.functions import Coalesce
 from rest_framework.decorators import action
@@ -30,8 +30,6 @@ class LoginView(TokenObtainPairView):
 
 
 class UserTrackingMixin:
-    permission_classes = [IsAuthenticated]
-
     def perform_create(self, serializer):
         serializer.save(created_by=self.request.user, updated_by=self.request.user)
 
@@ -45,7 +43,7 @@ User = get_user_model()
 class UserViewSet(viewsets.ModelViewSet):
     queryset = User.objects.all().order_by('id')
     serializer_class = UserSerializer
-    permission_classes = [IsAuthenticated, IsAdmin]
+    permission_classes = [IsAdmin]
 
     def get_permissions(self):
         if getattr(self, 'action', None) in ('me', 'change_password'):
@@ -85,16 +83,20 @@ class UserViewSet(viewsets.ModelViewSet):
 
 
 class CategoryViewSet(UserTrackingMixin, viewsets.ModelViewSet):
+    permission_classes = [IsAdmin]
     queryset = Category.objects.all()
     serializer_class = CategorySerializer
 
 
 class UnitViewSet(UserTrackingMixin, viewsets.ModelViewSet):
+    permission_classes = [IsAdmin]
     queryset = Unit.objects.all()
     serializer_class = UnitSerializer
 
 
 class ProductViewSet(UserTrackingMixin, viewsets.ModelViewSet):
+    permission_classes = [IsAdminOrReadOnly]
+
     queryset = Product.objects.select_related('category').prefetch_related(
         'prices__unit',
         'productunit_set__unit'
@@ -107,6 +109,8 @@ class ProductViewSet(UserTrackingMixin, viewsets.ModelViewSet):
 
 
 class CustomerViewSet(UserTrackingMixin, viewsets.ModelViewSet):
+    permission_classes = [IsAdmin]
+
     def get_queryset(self):
         queryset = Customer.objects.all()
 
@@ -128,6 +132,8 @@ class CustomerViewSet(UserTrackingMixin, viewsets.ModelViewSet):
 
 
 class SupplierViewSet(UserTrackingMixin, viewsets.ModelViewSet):
+    permission_classes = [IsAdmin]
+
     def get_queryset(self):
         queryset = Supplier.objects.all()
 
@@ -151,6 +157,8 @@ class SupplierViewSet(UserTrackingMixin, viewsets.ModelViewSet):
 
 
 class SalesOrderViewSet(UserTrackingMixin, viewsets.ModelViewSet):
+    permission_classes = [IsAdmin]
+
     queryset = SalesOrder.objects.select_related('customer').prefetch_related(
         'items__product', 'items__unit'
     )
@@ -186,6 +194,8 @@ class SalesOrderViewSet(UserTrackingMixin, viewsets.ModelViewSet):
 
 
 class PurchaseOrderViewSet(UserTrackingMixin, viewsets.ModelViewSet):
+    permission_classes = [IsAdmin]
+
     queryset = PurchaseOrder.objects.select_related('supplier').prefetch_related(
         'items__product', 'items__unit'
     )
@@ -221,6 +231,8 @@ class PurchaseOrderViewSet(UserTrackingMixin, viewsets.ModelViewSet):
 
 
 class DeliveryViewSet(UserTrackingMixin, mixins.UpdateModelMixin, viewsets.ReadOnlyModelViewSet):
+    permission_classes = [IsAuthenticated]
+
     queryset = Delivery.objects.select_related(
         'sales_order', 'sales_order__customer'
     ).prefetch_related('items__product', 'items__unit')
@@ -254,6 +266,8 @@ class DeliveryViewSet(UserTrackingMixin, mixins.UpdateModelMixin, viewsets.ReadO
 
 
 class ReceiptViewSet(UserTrackingMixin, mixins.UpdateModelMixin, viewsets.ReadOnlyModelViewSet):
+    permission_classes = [IsAuthenticated]
+
     queryset = Receipt.objects.select_related(
         'purchase_order', 'purchase_order__supplier'
     ).prefetch_related('items__product', 'items__unit')
@@ -287,7 +301,7 @@ class ReceiptViewSet(UserTrackingMixin, mixins.UpdateModelMixin, viewsets.ReadOn
 
 
 class DashboardViewSet(viewsets.ViewSet):
-    permission_classes = [IsAuthenticated]
+    permission_classes = [IsAdmin]
 
     @action(detail=False, methods=['get'], url_path='metrics')
     def metrics(self, request):

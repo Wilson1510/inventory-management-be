@@ -106,6 +106,11 @@ class DeliveryViewSetTest(APITestCase):
         response = self.client.post(self.list_url, {}, format='json')
         self.assertEqual(response.status_code, status.HTTP_405_METHOD_NOT_ALLOWED)
 
+    def test_delete_not_allowed(self):
+        self.client.force_authenticate(user=self.user_a)
+        response = self.client.delete(self.detail_url)
+        self.assertEqual(response.status_code, status.HTTP_405_METHOD_NOT_ALLOWED)
+
     def test_get_deliveries_list(self):
         self.client.force_authenticate(user=self.user_a)
         response = self.client.get(self.list_url)
@@ -286,6 +291,11 @@ class ReceiptViewSetTest(APITestCase):
     def test_post_create_not_allowed(self):
         self.client.force_authenticate(user=self.user_a)
         response = self.client.post(self.list_url, {}, format='json')
+        self.assertEqual(response.status_code, status.HTTP_405_METHOD_NOT_ALLOWED)
+
+    def test_delete_update_not_allowed(self):
+        self.client.force_authenticate(user=self.user_a)
+        response = self.client.delete(self.detail_url)
         self.assertEqual(response.status_code, status.HTTP_405_METHOD_NOT_ALLOWED)
 
     def test_get_receipts_list(self):
