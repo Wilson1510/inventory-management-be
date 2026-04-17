@@ -136,6 +136,12 @@ def top_selling_products(limit=TOP_WIDGET_LIMIT):
     )
     product_ids = [r["product_id"] for r in rows]
     products = {p.id: p for p in Product.objects.filter(id__in=product_ids)}
+
+    product_units = ProductUnit.objects.filter(
+        product_id__in=product_ids, is_base_unit=True
+    ).select_related("unit")
+    base_units = {pu.product_id: pu.unit.name for pu in product_units}
+
     out = []
     for r in rows:
         p = products.get(r["product_id"])
@@ -146,6 +152,7 @@ def top_selling_products(limit=TOP_WIDGET_LIMIT):
                     "sku_number": p.sku_number,
                     "name": p.name,
                     "sold_qty": r["sold_qty"] or 0,
+                    "unit": base_units.get(p.id, ""),
                 }
             )
     return out
@@ -166,6 +173,12 @@ def slow_moving_products(limit=TOP_WIDGET_LIMIT):
     )
     product_ids = [r["product_id"] for r in rows]
     products = {p.id: p for p in Product.objects.filter(id__in=product_ids)}
+
+    product_units = ProductUnit.objects.filter(
+        product_id__in=product_ids, is_base_unit=True
+    ).select_related("unit")
+    base_units = {pu.product_id: pu.unit.name for pu in product_units}
+
     out = []
     for r in rows:
         p = products.get(r["product_id"])
@@ -176,6 +189,7 @@ def slow_moving_products(limit=TOP_WIDGET_LIMIT):
                     "sku_number": p.sku_number,
                     "name": p.name,
                     "sold_qty": r["sold_qty"] or 0,
+                    "unit": base_units.get(p.id, ""),
                 }
             )
     return out
