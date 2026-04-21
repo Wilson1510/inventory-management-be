@@ -25,7 +25,7 @@ class Product(BaseModel):
     base_price = models.DecimalField(max_digits=10, decimal_places=2, default=0)
     quantity = models.IntegerField(default=0)
     category = models.ForeignKey(
-        Category, on_delete=models.CASCADE, related_name='products', db_index=True
+        Category, on_delete=models.PROTECT, related_name='products', db_index=True
     )
     units = models.ManyToManyField(Unit, through='ProductUnit', related_name='products')
 

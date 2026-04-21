@@ -61,7 +61,7 @@ class PurchaseOrder(BaseOrder):
     NUMBER_PREFIX = 'PO'
 
     supplier = models.ForeignKey(
-        Supplier, on_delete=models.CASCADE, related_name='purchase_orders'
+        Supplier, on_delete=models.PROTECT, related_name='purchase_orders'
     )
     arrival_date = models.DateField(null=True, blank=True)
 
@@ -119,7 +119,7 @@ class SalesOrder(BaseOrder):
     NUMBER_PREFIX = 'SO'
 
     customer = models.ForeignKey(
-        Customer, on_delete=models.CASCADE, related_name='sales_orders'
+        Customer, on_delete=models.PROTECT, related_name='sales_orders'
     )
     delivery_date = models.DateField(null=True, blank=True)
 
@@ -173,10 +173,10 @@ class SalesOrder(BaseOrder):
 
 
 class BaseOrderItem(BaseModel):
-    product = models.ForeignKey(Product, on_delete=models.CASCADE, related_name='%(class)s_items')
+    product = models.ForeignKey(Product, on_delete=models.PROTECT, related_name='%(class)s_items')
     quantity = models.IntegerField(default=1)
     price = models.DecimalField(max_digits=10, decimal_places=2)
-    unit = models.ForeignKey(Unit, on_delete=models.CASCADE)
+    unit = models.ForeignKey(Unit, on_delete=models.PROTECT)
 
     class Meta:
         abstract = True
