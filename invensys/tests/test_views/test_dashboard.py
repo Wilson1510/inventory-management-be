@@ -97,6 +97,7 @@ class DashboardAPITest(APITestCase):
             "sku_number": product.sku_number,
             "name": "ApiProd",
             "sold_qty": 2,
+            "unit": "api-u"
         }
         self.assertEqual(r.data["top_selling_products"], [row])
         self.assertEqual(r.data["slow_moving_products"], [row])

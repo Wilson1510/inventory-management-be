@@ -2,7 +2,7 @@ from django.urls import reverse
 from rest_framework import status
 from rest_framework.test import APITestCase
 from django.contrib.auth import get_user_model
-from ...models import Category
+from ...models import Category, Product
 
 
 class CategoryViewSetTest(APITestCase):
@@ -67,3 +67,18 @@ class CategoryViewSetTest(APITestCase):
 
         self.assertEqual(response.status_code, status.HTTP_204_NO_CONTENT)
         self.assertFalse(Category.objects.filter(pk=self.category.pk).exists())
+
+    def test_delete_category_blocked_when_has_products(self):
+        Product.objects.create(
+            name='Linked Product',
+            category=self.category,
+            created_by=self.admin,
+            updated_by=self.admin,
+        )
+        self.client.force_authenticate(user=self.admin)
+        response = self.client.delete(self.detail_url)
+
+        self.assertEqual(response.status_code, status.HTTP_409_CONFLICT)
+        self.assertEqual(response.data['code'], 'category_has_products')
+        self.assertIn('detail', response.data)
+        self.assertTrue(Category.objects.filter(pk=self.category.pk).exists())
