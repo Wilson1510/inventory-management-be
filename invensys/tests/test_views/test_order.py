@@ -140,6 +140,10 @@ class SalesOrderViewSetTest(APITestCase):
         self.assertEqual(created.items.count(), 1)
         self.assertEqual(created.created_by, self.admin_a)
 
+        item = created.items.first()
+        self.assertEqual(item.created_by, self.admin_a)
+        self.assertEqual(item.updated_by, self.admin_a)
+
     def test_update_sales_order(self):
         self.client.force_authenticate(user=self.admin_b)
         payload = {
@@ -167,8 +171,16 @@ class SalesOrderViewSetTest(APITestCase):
         self.sales_order.refresh_from_db()
         self.assertEqual(self.sales_order.customer, self.customer)
         self.assertEqual(self.sales_order.items.count(), 2)
-        self.assertEqual(self.sales_order.items.get(pk=self.so_item.pk).price, Decimal('10.00'))
-        self.assertTrue(self.sales_order.items.filter(quantity=1, price=Decimal('5.00')).exists())
+        
+        existing_item = self.sales_order.items.get(pk=self.so_item.pk)
+        self.assertEqual(existing_item.price, Decimal('10.00'))
+        self.assertEqual(existing_item.updated_by, self.admin_b)
+        
+        new_item = self.sales_order.items.filter(quantity=1, price=Decimal('5.00')).first()
+        self.assertIsNotNone(new_item)
+        self.assertEqual(new_item.created_by, self.admin_b)
+        self.assertEqual(new_item.updated_by, self.admin_b)
+        
         self.assertFalse(self.sales_order.items.filter(pk=self.so_item2.pk).exists())
 
     def test_partial_update_sales_order(self):
@@ -364,6 +376,10 @@ class PurchaseOrderViewSetTest(APITestCase):
         self.assertEqual(created.items.count(), 1)
         self.assertEqual(created.created_by, self.admin_a)
 
+        item = created.items.first()
+        self.assertEqual(item.created_by, self.admin_a)
+        self.assertEqual(item.updated_by, self.admin_a)
+
     def test_update_purchase_order(self):
         self.client.force_authenticate(user=self.admin_b)
         payload = {
@@ -390,10 +406,16 @@ class PurchaseOrderViewSetTest(APITestCase):
         self.assertEqual(response.status_code, status.HTTP_200_OK)
         self.purchase_order.refresh_from_db()
         self.assertEqual(self.purchase_order.items.count(), 2)
-        self.assertEqual(self.purchase_order.items.get(pk=self.po_item.pk).price, Decimal('10.00'))
-        self.assertTrue(
-            self.purchase_order.items.filter(quantity=1, price=Decimal('5.00')).exists()
-        )
+        
+        existing_item = self.purchase_order.items.get(pk=self.po_item.pk)
+        self.assertEqual(existing_item.price, Decimal('10.00'))
+        self.assertEqual(existing_item.updated_by, self.admin_b)
+        
+        new_item = self.purchase_order.items.filter(quantity=1, price=Decimal('5.00')).first()
+        self.assertIsNotNone(new_item)
+        self.assertEqual(new_item.created_by, self.admin_b)
+        self.assertEqual(new_item.updated_by, self.admin_b)
+
         self.assertFalse(self.purchase_order.items.filter(pk=self.po_item2.pk).exists())
 
     def test_partial_update_purchase_order(self):

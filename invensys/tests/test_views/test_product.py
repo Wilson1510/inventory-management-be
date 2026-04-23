@@ -113,6 +113,14 @@ class ProductViewSetTest(APITestCase):
         self.assertEqual(created.prices.count(), 1)
         self.assertEqual(created.productunit_set.count(), 1)
 
+        price = created.prices.first()
+        self.assertEqual(price.created_by, self.admin_a)
+        self.assertEqual(price.updated_by, self.admin_a)
+
+        unit = created.productunit_set.first()
+        self.assertEqual(unit.created_by, self.admin_a)
+        self.assertEqual(unit.updated_by, self.admin_a)
+
     def test_update_product(self):
         self.client.force_authenticate(user=self.admin_b)
         payload = {
@@ -163,6 +171,16 @@ class ProductViewSetTest(APITestCase):
         new_pu = self.product.productunit_set.filter(unit=self.unit2, multiplier=4).first()
         self.assertTrue(self.product.productunit_set.filter(pk=self.pu1.pk).exists())
         self.assertTrue(self.product.productunit_set.filter(pk=new_pu.pk).exists())
+
+        existing_pp = self.product.prices.get(pk=self.pp1.pk)
+        self.assertEqual(existing_pp.updated_by, self.admin_b)
+        self.assertEqual(new_pp.created_by, self.admin_b)
+        self.assertEqual(new_pp.updated_by, self.admin_b)
+
+        existing_pu = self.product.productunit_set.get(pk=self.pu1.pk)
+        self.assertEqual(existing_pu.updated_by, self.admin_b)
+        self.assertEqual(new_pu.created_by, self.admin_b)
+        self.assertEqual(new_pu.updated_by, self.admin_b)
 
     def test_partial_update_product(self):
         self.client.force_authenticate(user=self.admin_b)
