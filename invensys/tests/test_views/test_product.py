@@ -215,3 +215,39 @@ class ProductViewSetTest(APITestCase):
         self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)
         self.assertIn('category_id', response.data)
         self.assertNotIn('units', response.data)
+
+    def test_create_product_with_duplicate_units(self):
+        self.client.force_authenticate(user=self.admin_a)
+        payload = {
+            'name': 'Invalid Product Units',
+            'category_id': self.category.pk,
+            'prices': [],
+            'units': [
+                {'unit_id': self.unit.pk, 'multiplier': 1, 'is_base_unit': True},
+                {'unit_id': self.unit.pk, 'multiplier': 2, 'is_base_unit': False},
+            ],
+        }
+        response = self.client.post(self.list_url, payload, format='json')
+        self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)
+        self.assertIn('code', response.data)
+        self.assertEqual(response.data['code'], 'duplicate_unit_in_payload')
+        self.assertIn('detail', response.data)
+        self.assertEqual(response.data['detail'], 'Duplicate units are not allowed.')
+
+    def test_create_product_with_duplicate_prices(self):
+        self.client.force_authenticate(user=self.admin_a)
+        payload = {
+            'name': 'Invalid Product Prices',
+            'category_id': self.category.pk,
+            'prices': [
+                {'price': '150.00', 'minimum_quantity': 1, 'unit_id': self.unit.pk},
+                {'price': '160.00', 'minimum_quantity': 1, 'unit_id': self.unit.pk},
+            ],
+            'units': [],
+        }
+        response = self.client.post(self.list_url, payload, format='json')
+        self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)
+        self.assertIn('code', response.data)
+        self.assertEqual(response.data['code'], 'duplicate_price_in_payload')
+        self.assertIn('detail', response.data)
+        self.assertEqual(response.data['detail'], 'Duplicate prices for the same unit and minimum quantity are not allowed.')

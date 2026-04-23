@@ -1,9 +1,17 @@
 from django.db import transaction
 from rest_framework import serializers
+from rest_framework.exceptions import APIException
 from ..models import Product, ProductPrice, ProductUnit, Unit, Category
 from .unit import UnitNestedSerializer
 from .category import CategoryNestedSerializer
 from .utils import METADATA_FIELDS, READ_ONLY_FIELDS, sync_fk_children
+
+class DuplicatePayloadError(APIException):
+    status_code = 400
+    default_code = 'invalid'
+
+    def __init__(self, detail, code=None):
+        self.detail = {'detail': detail, 'code': code or self.default_code}
 
 
 class ProductPriceSerializer(serializers.ModelSerializer):
@@ -48,6 +56,37 @@ class ProductDetailSerializer(serializers.ModelSerializer):
         read_only_fields = [
             'sku_number', 'base_price', 'quantity'
         ] + READ_ONLY_FIELDS
+
+    def validate(self, attrs):
+        units_data = attrs.get('productunit_set')
+        if units_data is not None:
+            seen_units = set()
+            for i, unit_data in enumerate(units_data):
+                unit = unit_data.get('unit')
+                if unit:
+                    if unit.id in seen_units:
+                        raise DuplicatePayloadError(
+                            "Duplicate units are not allowed.",
+                            code="duplicate_unit_in_payload"
+                        )
+                    seen_units.add(unit.id)
+
+        prices_data = attrs.get('prices')
+        if prices_data is not None:
+            seen_prices = set()
+            for price_data in prices_data:
+                unit = price_data.get('unit')
+                min_qty = price_data.get('minimum_quantity')
+                if unit and min_qty is not None:
+                    key = (unit.id, min_qty)
+                    if key in seen_prices:
+                        raise DuplicatePayloadError(
+                            "Duplicate prices for the same unit and minimum quantity are not allowed.",
+                            code="duplicate_price_in_payload"
+                        )
+                    seen_prices.add(key)
+
+        return attrs
 
     def create(self, validated_data):
         prices_data = validated_data.pop('prices', [])
