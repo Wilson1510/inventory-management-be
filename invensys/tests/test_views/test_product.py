@@ -3,7 +3,7 @@ from django.contrib.auth import get_user_model
 from django.urls import reverse
 from rest_framework import status
 from rest_framework.test import APITestCase
-from ...models import Category, Product, ProductPrice, ProductUnit, Unit
+from ...models import Category, Customer, Product, ProductPrice, ProductUnit, SalesOrder, SalesOrderItem, Unit
 
 
 class ProductViewSetTest(APITestCase):
@@ -200,6 +200,30 @@ class ProductViewSetTest(APITestCase):
 
         self.assertEqual(response.status_code, status.HTTP_204_NO_CONTENT)
         self.assertFalse(Product.objects.filter(pk=self.product.pk).exists())
+
+    def test_delete_product_with_references(self):
+        customer = Customer.objects.create(name='Buyer', created_by=self.admin_a)
+        so = SalesOrder.objects.create(
+            customer=customer,
+            created_by=self.admin_a,
+            updated_by=self.admin_a,
+        )
+        SalesOrderItem.objects.create(
+            sales=so,
+            product=self.product,
+            unit=self.unit,
+            quantity=1,
+            price=Decimal('25.00'),
+            created_by=self.admin_a,
+            updated_by=self.admin_a,
+        )
+
+        self.client.force_authenticate(user=self.admin_a)
+        response = self.client.delete(self.detail_url)
+
+        self.assertEqual(response.status_code, status.HTTP_409_CONFLICT)
+        self.assertEqual(response.data['code'], 'product_has_references')
+        self.assertTrue(Product.objects.filter(pk=self.product.pk).exists())
 
     def test_invalid_create_product(self):
         self.client.force_authenticate(user=self.admin_a)

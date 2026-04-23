@@ -126,13 +126,19 @@ class UnitViewSet(UserTrackingMixin, ProtectedDeleteMixin, viewsets.ModelViewSet
     protected_delete_code = 'unit_has_references'
 
 
-class ProductViewSet(UserTrackingMixin, viewsets.ModelViewSet):
+class ProductViewSet(UserTrackingMixin, ProtectedDeleteMixin, viewsets.ModelViewSet):
     permission_classes = [IsAdminOrReadOnly]
 
     queryset = Product.objects.select_related('category').prefetch_related(
         'prices__unit',
         'productunit_set__unit'
     )
+
+    protected_delete_detail = (
+        'This product cannot be deleted because it is still referenced by '
+        'sales or purchase order items.'
+    )
+    protected_delete_code = 'product_has_references'
 
     def get_serializer_class(self):
         if self.action == 'list':
