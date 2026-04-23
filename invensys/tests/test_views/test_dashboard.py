@@ -13,10 +13,17 @@ from ...models import Category, Customer, Product, ProductUnit, SalesOrder, Sale
 class DashboardAPITest(APITestCase):
     def setUp(self):
         super().setUp()
-        self.user = get_user_model().objects.create_user(username="api_dash", password="x")
-        self.client.force_authenticate(user=self.user)
+        User = get_user_model()
+        self.admin = User.objects.create_superuser(username='admin', password='password123')
         self.metrics_url = reverse("dashboard-metrics")
         self.top_url = reverse("dashboard-top-data")
+
+    def test_staff_access_denied(self):
+        User = get_user_model()
+        self.staff = User.objects.create_user(username="staff", password="x")
+        self.client.force_authenticate(user=self.staff)
+        response = self.client.get(self.metrics_url)
+        self.assertEqual(response.status_code, status.HTTP_403_FORBIDDEN)
 
     def test_metrics_requires_auth(self):
         self.client.force_authenticate(user=None)
@@ -29,6 +36,7 @@ class DashboardAPITest(APITestCase):
         self.assertEqual(r.status_code, status.HTTP_401_UNAUTHORIZED)
 
     def test_metrics_empty_returns_zero_values(self):
+        self.client.force_authenticate(user=self.admin)
         r = self.client.get(self.metrics_url)
         self.assertEqual(r.status_code, status.HTTP_200_OK)
         self.assertEqual(r.data["total_revenue"], "0.00")
@@ -37,6 +45,7 @@ class DashboardAPITest(APITestCase):
         self.assertEqual(r.data["active_purchase_orders"], 0)
 
     def test_top_data_empty_returns_empty_lists(self):
+        self.client.force_authenticate(user=self.admin)
         r = self.client.get(self.top_url)
         self.assertEqual(r.status_code, status.HTTP_200_OK)
         self.assertEqual(r.data["top_selling_products"], [])
@@ -62,11 +71,12 @@ class DashboardAPITest(APITestCase):
         for item in delivery.items.all():
             item.quantity_delivered = item.quantity
             item.save()
-        delivery.done(self.user)
+        delivery.done(self.admin)
         product.refresh_from_db()
         return product, customer
 
     def test_metrics_data_exists_returns_expected_values(self):
+        self.client.force_authenticate(user=self.admin)
         self._seed_one_confirmed_fulfilled_sale()
         r = self.client.get(self.metrics_url)
         self.assertEqual(r.status_code, status.HTTP_200_OK)
@@ -77,6 +87,7 @@ class DashboardAPITest(APITestCase):
         self.assertEqual(r.data["active_purchase_orders"], 0)
 
     def test_top_data_data_exists_returns_expected_values(self):
+        self.client.force_authenticate(user=self.admin)
         product, customer = self._seed_one_confirmed_fulfilled_sale()
         r = self.client.get(self.top_url)
         self.assertEqual(r.status_code, status.HTTP_200_OK)
@@ -86,6 +97,7 @@ class DashboardAPITest(APITestCase):
             "sku_number": product.sku_number,
             "name": "ApiProd",
             "sold_qty": 2,
+            "unit": "api-u"
         }
         self.assertEqual(r.data["top_selling_products"], [row])
         self.assertEqual(r.data["slow_moving_products"], [row])

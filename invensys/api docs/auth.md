@@ -13,13 +13,6 @@
 ```json
 {
     "access": "jwt-access-token",
-    "refresh": "jwt-refresh-token",
-    "user": {
-        "id": 1,
-        "username": "admin",
-        "email": "admin@mail.com",
-        "name": "System Admin",
-        "role": "admin"
-    }
+    "refresh": "jwt-refresh-token"
 }
 ```

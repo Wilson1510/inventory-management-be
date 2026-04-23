@@ -25,23 +25,22 @@ from ...models import (
 class SalesOrderViewSetTest(APITestCase):
     def setUp(self):
         User = get_user_model()
-        self.user_a = User.objects.create_user(username='usera', password='password123')
-        self.user_b = User.objects.create_user(username='userb', password='password123')
-
-        self.category = Category.objects.create(name='Cat', created_by=self.user_a)
+        self.admin_a = User.objects.create_superuser(username='admin_a', password='password123')
+        self.admin_b = User.objects.create_superuser(username='admin_b', password='password123')
+        self.category = Category.objects.create(name='Cat', created_by=self.admin_a)
         self.unit = Unit.objects.create(name='pcs')
         self.unit2 = Unit.objects.create(name='box')
         self.product = Product.objects.create(
             name='Item A',
             category=self.category,
-            created_by=self.user_a,
-            updated_by=self.user_a,
+            created_by=self.admin_a,
+            updated_by=self.admin_a,
         )
         self.product2 = Product.objects.create(
             name='Item B',
             category=self.category,
-            created_by=self.user_a,
-            updated_by=self.user_a,
+            created_by=self.admin_a,
+            updated_by=self.admin_a,
         )
         ProductUnit.objects.create(
             product=self.product,
@@ -56,11 +55,11 @@ class SalesOrderViewSetTest(APITestCase):
             is_base_unit=True,
         )
 
-        self.customer = Customer.objects.create(name='Buyer', created_by=self.user_a)
+        self.customer = Customer.objects.create(name='Buyer', created_by=self.admin_a)
         self.sales_order = SalesOrder.objects.create(
             customer=self.customer,
-            created_by=self.user_a,
-            updated_by=self.user_a,
+            created_by=self.admin_a,
+            updated_by=self.admin_a,
         )
         self.so_item = SalesOrderItem.objects.create(
             sales=self.sales_order,
@@ -89,8 +88,15 @@ class SalesOrderViewSetTest(APITestCase):
         response = self.client.get(self.list_url)
         self.assertEqual(response.status_code, status.HTTP_401_UNAUTHORIZED)
 
+    def test_staff_access_denied(self):
+        User = get_user_model()
+        self.staff = User.objects.create_user(username='staff', password='password123')
+        self.client.force_authenticate(user=self.staff)
+        response = self.client.get(self.list_url)
+        self.assertEqual(response.status_code, status.HTTP_403_FORBIDDEN)
+
     def test_get_sales_orders_list(self):
-        self.client.force_authenticate(user=self.user_a)
+        self.client.force_authenticate(user=self.admin_a)
         response = self.client.get(self.list_url)
 
         self.assertEqual(response.status_code, status.HTTP_200_OK)
@@ -101,7 +107,7 @@ class SalesOrderViewSetTest(APITestCase):
         self.assertEqual(Decimal(str(row['total'])), Decimal('60.00'))
 
     def test_get_sales_order_detail(self):
-        self.client.force_authenticate(user=self.user_a)
+        self.client.force_authenticate(user=self.admin_a)
         response = self.client.get(self.detail_url)
 
         self.assertEqual(response.status_code, status.HTTP_200_OK)
@@ -113,7 +119,7 @@ class SalesOrderViewSetTest(APITestCase):
         self.assertEqual(response.data['items'][0]['unit']['name'], 'pcs')
 
     def test_create_sales_order(self):
-        self.client.force_authenticate(user=self.user_a)
+        self.client.force_authenticate(user=self.admin_a)
         payload = {
             'customer_id': self.customer.pk,
             'delivery_date': self._future_date_str(),
@@ -132,10 +138,10 @@ class SalesOrderViewSetTest(APITestCase):
         created = SalesOrder.objects.get(pk=response.data['id'])
         self.assertEqual(created.customer, self.customer)
         self.assertEqual(created.items.count(), 1)
-        self.assertEqual(created.created_by, self.user_a)
+        self.assertEqual(created.created_by, self.admin_a)
 
     def test_update_sales_order(self):
-        self.client.force_authenticate(user=self.user_b)
+        self.client.force_authenticate(user=self.admin_b)
         payload = {
             'customer_id': self.customer.pk,
             'delivery_date': self._future_date_str(),
@@ -166,7 +172,7 @@ class SalesOrderViewSetTest(APITestCase):
         self.assertFalse(self.sales_order.items.filter(pk=self.so_item2.pk).exists())
 
     def test_partial_update_sales_order(self):
-        self.client.force_authenticate(user=self.user_b)
+        self.client.force_authenticate(user=self.admin_b)
         new_date = self._future_date_str()
         payload = {'delivery_date': new_date}
         response = self.client.patch(self.detail_url, payload, format='json')
@@ -176,7 +182,7 @@ class SalesOrderViewSetTest(APITestCase):
         self.assertEqual(self.sales_order.items.count(), 2)
 
     def test_delete_sales_order(self):
-        self.client.force_authenticate(user=self.user_a)
+        self.client.force_authenticate(user=self.admin_a)
         response = self.client.delete(self.detail_url)
 
         self.assertEqual(response.status_code, status.HTTP_204_NO_CONTENT)
@@ -185,7 +191,7 @@ class SalesOrderViewSetTest(APITestCase):
     def test_confirm_sales_order_success(self):
         self.sales_order.delivery_date = timezone.now().date() + timedelta(days=1)
         self.sales_order.save()
-        self.client.force_authenticate(user=self.user_a)
+        self.client.force_authenticate(user=self.admin_a)
         response = self.client.post(self.confirm_url)
 
         self.assertEqual(response.status_code, status.HTTP_200_OK)
@@ -194,7 +200,7 @@ class SalesOrderViewSetTest(APITestCase):
         self.assertEqual(self.sales_order.status, SalesOrder.Status.CONFIRMED)
 
     def test_confirm_sales_order_bad_request(self):
-        self.client.force_authenticate(user=self.user_a)
+        self.client.force_authenticate(user=self.admin_a)
         response = self.client.post(self.confirm_url)
 
         self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)
@@ -203,7 +209,7 @@ class SalesOrderViewSetTest(APITestCase):
         self.assertEqual(self.sales_order.status, SalesOrder.Status.DRAFT)
 
     def test_cancel_sales_order(self):
-        self.client.force_authenticate(user=self.user_a)
+        self.client.force_authenticate(user=self.admin_a)
         response = self.client.post(self.cancel_url)
 
         self.assertEqual(response.status_code, status.HTTP_200_OK)
@@ -213,7 +219,7 @@ class SalesOrderViewSetTest(APITestCase):
     def test_cancel_sales_order_bad_request(self):
         with patch('invensys.views.SalesOrder.cancel') as mock_cancel:
             mock_cancel.side_effect = ValueError("Test error")
-            self.client.force_authenticate(user=self.user_a)
+            self.client.force_authenticate(user=self.admin_a)
             response = self.client.post(self.cancel_url)
 
             self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)
@@ -222,7 +228,7 @@ class SalesOrderViewSetTest(APITestCase):
             self.assertEqual(self.sales_order.status, SalesOrder.Status.DRAFT)
 
     def test_invalid_create_sales_order(self):
-        self.client.force_authenticate(user=self.user_a)
+        self.client.force_authenticate(user=self.admin_a)
         payload = {
             'customer_id': 99999,
             'delivery_date': self._future_date_str(),
@@ -243,23 +249,23 @@ class SalesOrderViewSetTest(APITestCase):
 class PurchaseOrderViewSetTest(APITestCase):
     def setUp(self):
         User = get_user_model()
-        self.user_a = User.objects.create_user(username='usera_po', password='password123')
-        self.user_b = User.objects.create_user(username='userb_po', password='password123')
+        self.admin_a = User.objects.create_superuser(username='admin_a', password='password123')
+        self.admin_b = User.objects.create_superuser(username='admin_b', password='password123')
 
-        self.category = Category.objects.create(name='Cat', created_by=self.user_a)
+        self.category = Category.objects.create(name='Cat', created_by=self.admin_a)
         self.unit = Unit.objects.create(name='pcs')
         self.unit2 = Unit.objects.create(name='box')
         self.product = Product.objects.create(
             name='Item A',
             category=self.category,
-            created_by=self.user_a,
-            updated_by=self.user_a,
+            created_by=self.admin_a,
+            updated_by=self.admin_a,
         )
         self.product2 = Product.objects.create(
             name='Item B',
             category=self.category,
-            created_by=self.user_a,
-            updated_by=self.user_a,
+            created_by=self.admin_a,
+            updated_by=self.admin_a,
         )
         ProductUnit.objects.create(
             product=self.product,
@@ -274,11 +280,11 @@ class PurchaseOrderViewSetTest(APITestCase):
             is_base_unit=True,
         )
 
-        self.supplier = Supplier.objects.create(name='Vendor', created_by=self.user_a)
+        self.supplier = Supplier.objects.create(name='Vendor', created_by=self.admin_a)
         self.purchase_order = PurchaseOrder.objects.create(
             supplier=self.supplier,
-            created_by=self.user_a,
-            updated_by=self.user_a,
+            created_by=self.admin_a,
+            updated_by=self.admin_a,
         )
         self.po_item = PurchaseOrderItem.objects.create(
             purchase=self.purchase_order,
@@ -307,8 +313,15 @@ class PurchaseOrderViewSetTest(APITestCase):
         response = self.client.get(self.list_url)
         self.assertEqual(response.status_code, status.HTTP_401_UNAUTHORIZED)
 
+    def test_staff_access_denied(self):
+        User = get_user_model()
+        self.staff = User.objects.create_user(username='staff', password='password123')
+        self.client.force_authenticate(user=self.staff)
+        response = self.client.get(self.list_url)
+        self.assertEqual(response.status_code, status.HTTP_403_FORBIDDEN)
+
     def test_get_purchase_orders_list(self):
-        self.client.force_authenticate(user=self.user_a)
+        self.client.force_authenticate(user=self.admin_a)
         response = self.client.get(self.list_url)
 
         self.assertEqual(response.status_code, status.HTTP_200_OK)
@@ -319,7 +332,7 @@ class PurchaseOrderViewSetTest(APITestCase):
         self.assertEqual(Decimal(str(row['total'])), Decimal('60.00'))
 
     def test_get_purchase_order_detail(self):
-        self.client.force_authenticate(user=self.user_a)
+        self.client.force_authenticate(user=self.admin_a)
         response = self.client.get(self.detail_url)
 
         self.assertEqual(response.status_code, status.HTTP_200_OK)
@@ -330,7 +343,7 @@ class PurchaseOrderViewSetTest(APITestCase):
         self.assertEqual(response.data['items'][0]['product']['name'], 'Item A')
 
     def test_create_purchase_order(self):
-        self.client.force_authenticate(user=self.user_a)
+        self.client.force_authenticate(user=self.admin_a)
         payload = {
             'supplier_id': self.supplier.pk,
             'arrival_date': self._future_date_str(),
@@ -349,10 +362,10 @@ class PurchaseOrderViewSetTest(APITestCase):
         created = PurchaseOrder.objects.get(pk=response.data['id'])
         self.assertEqual(created.supplier, self.supplier)
         self.assertEqual(created.items.count(), 1)
-        self.assertEqual(created.created_by, self.user_a)
+        self.assertEqual(created.created_by, self.admin_a)
 
     def test_update_purchase_order(self):
-        self.client.force_authenticate(user=self.user_b)
+        self.client.force_authenticate(user=self.admin_b)
         payload = {
             'supplier_id': self.supplier.pk,
             'arrival_date': self._future_date_str(),
@@ -384,7 +397,7 @@ class PurchaseOrderViewSetTest(APITestCase):
         self.assertFalse(self.purchase_order.items.filter(pk=self.po_item2.pk).exists())
 
     def test_partial_update_purchase_order(self):
-        self.client.force_authenticate(user=self.user_b)
+        self.client.force_authenticate(user=self.admin_b)
         new_date = self._future_date_str()
         payload = {'arrival_date': new_date}
         response = self.client.patch(self.detail_url, payload, format='json')
@@ -394,7 +407,7 @@ class PurchaseOrderViewSetTest(APITestCase):
         self.assertEqual(self.purchase_order.items.count(), 2)
 
     def test_delete_purchase_order(self):
-        self.client.force_authenticate(user=self.user_a)
+        self.client.force_authenticate(user=self.admin_a)
         response = self.client.delete(self.detail_url)
 
         self.assertEqual(response.status_code, status.HTTP_204_NO_CONTENT)
@@ -403,7 +416,7 @@ class PurchaseOrderViewSetTest(APITestCase):
     def test_confirm_purchase_order_success(self):
         self.purchase_order.arrival_date = timezone.now().date() + timedelta(days=1)
         self.purchase_order.save()
-        self.client.force_authenticate(user=self.user_a)
+        self.client.force_authenticate(user=self.admin_a)
         response = self.client.post(self.confirm_url)
 
         self.assertEqual(response.status_code, status.HTTP_200_OK)
@@ -412,7 +425,7 @@ class PurchaseOrderViewSetTest(APITestCase):
         self.assertEqual(self.purchase_order.status, PurchaseOrder.Status.CONFIRMED)
 
     def test_confirm_purchase_order_bad_request(self):
-        self.client.force_authenticate(user=self.user_a)
+        self.client.force_authenticate(user=self.admin_a)
         response = self.client.post(self.confirm_url)
 
         self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)
@@ -421,7 +434,7 @@ class PurchaseOrderViewSetTest(APITestCase):
         self.assertEqual(self.purchase_order.status, PurchaseOrder.Status.DRAFT)
 
     def test_cancel_purchase_order(self):
-        self.client.force_authenticate(user=self.user_a)
+        self.client.force_authenticate(user=self.admin_a)
         response = self.client.post(self.cancel_url)
 
         self.assertEqual(response.status_code, status.HTTP_200_OK)
@@ -431,7 +444,7 @@ class PurchaseOrderViewSetTest(APITestCase):
     def test_cancel_purchase_order_bad_request(self):
         with patch('invensys.views.PurchaseOrder.cancel') as mock_cancel:
             mock_cancel.side_effect = ValueError("Test error")
-            self.client.force_authenticate(user=self.user_a)
+            self.client.force_authenticate(user=self.admin_a)
             response = self.client.post(self.cancel_url)
 
             self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)
@@ -440,7 +453,7 @@ class PurchaseOrderViewSetTest(APITestCase):
             self.assertEqual(self.purchase_order.status, PurchaseOrder.Status.DRAFT)
 
     def test_invalid_create_purchase_order(self):
-        self.client.force_authenticate(user=self.user_a)
+        self.client.force_authenticate(user=self.admin_a)
         payload = {
             'supplier_id': 99999,
             'arrival_date': self._future_date_str(),

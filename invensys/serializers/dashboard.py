@@ -13,6 +13,7 @@ class TopProductWidgetSerializer(serializers.Serializer):
     sku_number = serializers.CharField()
     name = serializers.CharField()
     sold_qty = serializers.IntegerField()
+    unit = serializers.CharField()
 
 
 class TopCustomerWidgetSerializer(serializers.Serializer):

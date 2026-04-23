@@ -24,13 +24,15 @@
             "id": 1,
             "sku_number": "SKU-XXX",
             "name": "Premium Widget",
-            "sold_qty": 350
+            "sold_qty": 350,
+            "unit": "Pcs"
         },
         {
             "id": 2,
             "sku_number": "SKU-YYY",
             "name": "Premium Widget 2",
-            "sold_qty": 250
+            "sold_qty": 250,
+            "unit": "Pcs"
         }
     ],
     "slow_moving_products": [
@@ -38,13 +40,15 @@
             "id": 3,
             "sku_number": "SKU-ZZZ",
             "name": "Premium Widget 3",
-            "sold_qty": 150
+            "sold_qty": 150,
+            "unit": "Set"
         },
         {
             "id": 4,
             "sku_number": "SKU-AAA",
             "name": "Premium Widget 4",
-            "sold_qty": 100
+            "sold_qty": 100,
+            "unit": "Pcs"
         }
     ],
     "top_customers": [

@@ -18,7 +18,7 @@ class Shipment(BaseModel):
         PICKUP = 'pickup', 'Pickup'
         DELIVERY = 'delivery', 'Delivery'
 
-    number = models.CharField(max_length=150, unique=True, null=True, blank=True)
+    number = models.CharField(max_length=150, unique=True, null=True, blank=True, db_index=True)
     status = models.CharField(max_length=100, choices=Status.choices, default=Status.DRAFT)
     method = models.CharField(
         max_length=100, choices=ShipmentMethod.choices, default=ShipmentMethod.PICKUP

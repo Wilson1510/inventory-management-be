@@ -52,17 +52,19 @@ def _fulfilled_delivery_items_in_period():
 
 
 def total_revenue_last_30_days():
-    cutoff = _period_start()
-    total = (
-        SalesOrder.objects.filter(created_at__gte=cutoff, status=SalesOrder.Status.CONFIRMED,)
-        .aggregate(
-            t=Coalesce(
-                Sum("total"),
-                Value(0),
-                output_field=DecimalField(max_digits=12, decimal_places=2),
-            )
-        )["t"]
+    qs = _fulfilled_delivery_items_in_period().annotate(
+        line_revenue=ExpressionWrapper(
+            F("quantity_delivered") * F("so_price"),
+            output_field=DecimalField(max_digits=14, decimal_places=2),
+        )
     )
+    total = qs.aggregate(
+        t=Coalesce(
+            Sum("line_revenue"),
+            Value(0),
+            output_field=DecimalField(max_digits=14, decimal_places=2),
+        )
+    )["t"]
     return total
 
 
@@ -134,6 +136,12 @@ def top_selling_products(limit=TOP_WIDGET_LIMIT):
     )
     product_ids = [r["product_id"] for r in rows]
     products = {p.id: p for p in Product.objects.filter(id__in=product_ids)}
+
+    product_units = ProductUnit.objects.filter(
+        product_id__in=product_ids, is_base_unit=True
+    ).select_related("unit")
+    base_units = {pu.product_id: pu.unit.name for pu in product_units}
+
     out = []
     for r in rows:
         p = products.get(r["product_id"])
@@ -144,6 +152,7 @@ def top_selling_products(limit=TOP_WIDGET_LIMIT):
                     "sku_number": p.sku_number,
                     "name": p.name,
                     "sold_qty": r["sold_qty"] or 0,
+                    "unit": base_units.get(p.id, ""),
                 }
             )
     return out
@@ -164,6 +173,12 @@ def slow_moving_products(limit=TOP_WIDGET_LIMIT):
     )
     product_ids = [r["product_id"] for r in rows]
     products = {p.id: p for p in Product.objects.filter(id__in=product_ids)}
+
+    product_units = ProductUnit.objects.filter(
+        product_id__in=product_ids, is_base_unit=True
+    ).select_related("unit")
+    base_units = {pu.product_id: pu.unit.name for pu in product_units}
+
     out = []
     for r in rows:
         p = products.get(r["product_id"])
@@ -174,6 +189,7 @@ def slow_moving_products(limit=TOP_WIDGET_LIMIT):
                     "sku_number": p.sku_number,
                     "name": p.name,
                     "sold_qty": r["sold_qty"] or 0,
+                    "unit": base_units.get(p.id, ""),
                 }
             )
     return out
