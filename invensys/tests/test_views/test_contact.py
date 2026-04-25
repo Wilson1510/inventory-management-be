@@ -40,10 +40,10 @@ class CustomerViewSetTest(APITestCase):
         self.client.force_authenticate(user=self.admin)
         response = self.client.get(self.list_url)
         self.assertEqual(response.status_code, status.HTTP_200_OK)
-        self.assertEqual(response.data[0]['count_sale_orders'], 2)
-        self.assertEqual(response.data[0]['total_sale_amount'], '3000000.00')
+        self.assertEqual(response.data[0]['count_sales_orders'], 2)
+        self.assertEqual(response.data[0]['total_sales_amount'], '3000000.00')
         self.assertEqual(
-            response.data[0]['last_sale_order_date'],
+            response.data[0]['last_sales_order_date'],
             last_confirmed_sale_order.created_at.isoformat().replace("+00:00", "Z")
         )
 

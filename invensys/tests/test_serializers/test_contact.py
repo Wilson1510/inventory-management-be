@@ -18,15 +18,15 @@ class CustomerSerializerTests(TestCase):
     def test_list_serializer_reads_annotated_fields(self):
         dummy_date = timezone.now()
 
-        self.existing_customer.count_sale_orders = 5
-        self.existing_customer.total_sale_amount = Decimal("1500000.00")
-        self.existing_customer.last_sale_order_date = dummy_date
+        self.existing_customer.count_sales_orders = 5
+        self.existing_customer.total_sales_amount = Decimal("1500000.00")
+        self.existing_customer.last_sales_order_date = dummy_date
 
         serializer = CustomerListSerializer(instance=self.existing_customer)
         data = serializer.data
 
-        self.assertEqual(data['count_sale_orders'], 5)
-        self.assertEqual(data['total_sale_amount'], "1500000.00")
+        self.assertEqual(data['count_sales_orders'], 5)
+        self.assertEqual(data['total_sales_amount'], "1500000.00")
         self.assertEqual(data['name'], "Existing Customer")
 
 

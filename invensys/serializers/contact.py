@@ -18,13 +18,13 @@ class SupplierDetailSerializer(serializers.ModelSerializer):
 
 
 class CustomerListSerializer(CustomerDetailSerializer):
-    count_sale_orders = serializers.IntegerField(read_only=True)
-    last_sale_order_date = serializers.DateTimeField(read_only=True)
-    total_sale_amount = serializers.DecimalField(max_digits=15, decimal_places=2, read_only=True)
+    count_sales_orders = serializers.IntegerField(read_only=True)
+    last_sales_order_date = serializers.DateTimeField(read_only=True)
+    total_sales_amount = serializers.DecimalField(max_digits=15, decimal_places=2, read_only=True)
 
     class Meta(CustomerDetailSerializer.Meta):
         fields = CustomerDetailSerializer.Meta.fields + [
-            'count_sale_orders', 'last_sale_order_date', 'total_sale_amount'
+            'count_sales_orders', 'last_sales_order_date', 'total_sales_amount'
         ]
 
 
