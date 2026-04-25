@@ -24,10 +24,21 @@ from django.db.models.functions import Coalesce
 from rest_framework.decorators import action
 from rest_framework.response import Response
 from rest_framework_simplejwt.serializers import TokenObtainPairSerializer
+from django.utils import timezone
 
 
 class LoginView(TokenObtainPairView):
     serializer_class = TokenObtainPairSerializer
+
+    def post(self, request, *args, **kwargs):
+        response = super().post(request, *args, **kwargs)
+        if response.status_code == 200:
+            serializer = self.get_serializer(data=request.data)
+            serializer.is_valid(raise_exception=False)
+            if serializer.user:
+                serializer.user.last_login = timezone.now()
+                serializer.user.save(update_fields=['last_login'])
+        return response
 
 
 class UserTrackingMixin:
@@ -155,9 +166,9 @@ class CustomerViewSet(UserTrackingMixin, viewsets.ModelViewSet):
         if self.action == 'list':
             valid_status = Q(sales_orders__status=SalesOrder.Status.CONFIRMED)
             queryset = queryset.annotate(
-                count_sale_orders=Count('sales_orders', filter=valid_status),
-                last_sale_order_date=Max('sales_orders__created_at', filter=valid_status),
-                total_sale_amount=Coalesce(
+                count_sales_orders=Count('sales_orders', filter=valid_status),
+                last_sales_order_date=Max('sales_orders__created_at', filter=valid_status),
+                total_sales_amount=Coalesce(
                     Sum('sales_orders__total', filter=valid_status), 0, output_field=DecimalField()
                 )
             )
