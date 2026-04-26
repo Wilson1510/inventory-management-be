@@ -1,5 +1,6 @@
 from django.test import TestCase, RequestFactory
 from django.contrib.auth import get_user_model
+from django.utils import timezone
 from ...serializers.user import (
     UserSerializer, UserPasswordResetSerializer, UserChangePasswordSerializer, UserMeSerializer
 )
@@ -237,3 +238,47 @@ class UserMeSerializerTest(TestCase):
         serializer.save()
         self.user.refresh_from_db()
         self.assertEqual(self.user.role, User.Role.STAFF)
+
+
+class UserSerializerLastLoginTest(TestCase):
+    def setUp(self):
+        self.user = User.objects.create_user(
+            username='ll_user',
+            email='ll@example.com',
+            password='secret',
+            first_name='LL',
+            last_name='User',
+        )
+
+    def test_last_login_is_in_serializer_output(self):
+        serializer = UserSerializer(self.user)
+        self.assertIn('last_login', serializer.data)
+
+    def test_last_login_is_none_when_never_logged_in(self):
+        serializer = UserSerializer(self.user)
+        self.assertIsNone(serializer.data['last_login'])
+
+    def test_last_login_is_read_only_cannot_be_set_via_input(self):
+        future = timezone.now()
+        serializer = UserSerializer(
+            self.user,
+            data={
+                'username': 'll_user',
+                'name': 'LL User',
+                'role': self.user.role,
+                'is_active': True,
+                'last_login': future.isoformat(),
+            },
+        )
+        self.assertTrue(serializer.is_valid())
+        serializer.save()
+        self.user.refresh_from_db()
+        self.assertIsNone(self.user.last_login)
+
+    def test_last_login_reflects_db_value(self):
+        now = timezone.now()
+        self.user.last_login = now
+        self.user.save(update_fields=['last_login'])
+
+        serializer = UserSerializer(self.user)
+        self.assertIsNotNone(serializer.data['last_login'])

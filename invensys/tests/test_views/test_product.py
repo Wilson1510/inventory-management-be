@@ -3,7 +3,7 @@ from django.contrib.auth import get_user_model
 from django.urls import reverse
 from rest_framework import status
 from rest_framework.test import APITestCase
-from ...models import Category, Product, ProductPrice, ProductUnit, Unit
+from ...models import Category, Customer, Product, ProductPrice, ProductUnit, SalesOrder, SalesOrderItem, Unit
 
 
 class ProductViewSetTest(APITestCase):
@@ -113,6 +113,14 @@ class ProductViewSetTest(APITestCase):
         self.assertEqual(created.prices.count(), 1)
         self.assertEqual(created.productunit_set.count(), 1)
 
+        price = created.prices.first()
+        self.assertEqual(price.created_by, self.admin_a)
+        self.assertEqual(price.updated_by, self.admin_a)
+
+        unit = created.productunit_set.first()
+        self.assertEqual(unit.created_by, self.admin_a)
+        self.assertEqual(unit.updated_by, self.admin_a)
+
     def test_update_product(self):
         self.client.force_authenticate(user=self.admin_b)
         payload = {
@@ -164,6 +172,16 @@ class ProductViewSetTest(APITestCase):
         self.assertTrue(self.product.productunit_set.filter(pk=self.pu1.pk).exists())
         self.assertTrue(self.product.productunit_set.filter(pk=new_pu.pk).exists())
 
+        existing_pp = self.product.prices.get(pk=self.pp1.pk)
+        self.assertEqual(existing_pp.updated_by, self.admin_b)
+        self.assertEqual(new_pp.created_by, self.admin_b)
+        self.assertEqual(new_pp.updated_by, self.admin_b)
+
+        existing_pu = self.product.productunit_set.get(pk=self.pu1.pk)
+        self.assertEqual(existing_pu.updated_by, self.admin_b)
+        self.assertEqual(new_pu.created_by, self.admin_b)
+        self.assertEqual(new_pu.updated_by, self.admin_b)
+
     def test_partial_update_product(self):
         self.client.force_authenticate(user=self.admin_b)
         payload = {
@@ -183,6 +201,30 @@ class ProductViewSetTest(APITestCase):
         self.assertEqual(response.status_code, status.HTTP_204_NO_CONTENT)
         self.assertFalse(Product.objects.filter(pk=self.product.pk).exists())
 
+    def test_delete_product_with_references(self):
+        customer = Customer.objects.create(name='Buyer', created_by=self.admin_a)
+        so = SalesOrder.objects.create(
+            customer=customer,
+            created_by=self.admin_a,
+            updated_by=self.admin_a,
+        )
+        SalesOrderItem.objects.create(
+            sales=so,
+            product=self.product,
+            unit=self.unit,
+            quantity=1,
+            price=Decimal('25.00'),
+            created_by=self.admin_a,
+            updated_by=self.admin_a,
+        )
+
+        self.client.force_authenticate(user=self.admin_a)
+        response = self.client.delete(self.detail_url)
+
+        self.assertEqual(response.status_code, status.HTTP_409_CONFLICT)
+        self.assertEqual(response.data['code'], 'product_has_references')
+        self.assertTrue(Product.objects.filter(pk=self.product.pk).exists())
+
     def test_invalid_create_product(self):
         self.client.force_authenticate(user=self.admin_a)
         payload = {
@@ -197,3 +239,39 @@ class ProductViewSetTest(APITestCase):
         self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)
         self.assertIn('category_id', response.data)
         self.assertNotIn('units', response.data)
+
+    def test_create_product_with_duplicate_units(self):
+        self.client.force_authenticate(user=self.admin_a)
+        payload = {
+            'name': 'Invalid Product Units',
+            'category_id': self.category.pk,
+            'prices': [],
+            'units': [
+                {'unit_id': self.unit.pk, 'multiplier': 1, 'is_base_unit': True},
+                {'unit_id': self.unit.pk, 'multiplier': 2, 'is_base_unit': False},
+            ],
+        }
+        response = self.client.post(self.list_url, payload, format='json')
+        self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)
+        self.assertIn('code', response.data)
+        self.assertEqual(response.data['code'], 'duplicate_unit_in_payload')
+        self.assertIn('detail', response.data)
+        self.assertEqual(response.data['detail'], 'Duplicate units are not allowed.')
+
+    def test_create_product_with_duplicate_prices(self):
+        self.client.force_authenticate(user=self.admin_a)
+        payload = {
+            'name': 'Invalid Product Prices',
+            'category_id': self.category.pk,
+            'prices': [
+                {'price': '150.00', 'minimum_quantity': 1, 'unit_id': self.unit.pk},
+                {'price': '160.00', 'minimum_quantity': 1, 'unit_id': self.unit.pk},
+            ],
+            'units': [],
+        }
+        response = self.client.post(self.list_url, payload, format='json')
+        self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)
+        self.assertIn('code', response.data)
+        self.assertEqual(response.data['code'], 'duplicate_price_in_payload')
+        self.assertIn('detail', response.data)
+        self.assertEqual(response.data['detail'], 'Duplicate prices for the same unit and minimum quantity are not allowed.')

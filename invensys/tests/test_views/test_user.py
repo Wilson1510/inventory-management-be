@@ -2,6 +2,7 @@ from django.urls import reverse
 from rest_framework import status
 from rest_framework.test import APITestCase
 from django.contrib.auth import get_user_model
+from django.utils import timezone
 
 User = get_user_model()
 
@@ -215,3 +216,38 @@ class UserViewSetTest(APITestCase):
             format='json',
         )
         self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)
+
+
+class UserLastLoginFieldTest(APITestCase):
+    def setUp(self):
+        self.admin = User.objects.create_superuser(
+            username='admin_ll',
+            email='admin_ll@example.com',
+            password='adminpass123',
+            first_name='Admin',
+            last_name='LL',
+        )
+        self.target = User.objects.create_user(
+            username='target_ll',
+            email='target_ll@example.com',
+            password='targetpass123',
+            first_name='Target',
+            last_name='LL',
+        )
+        self.list_url = reverse('user-list')
+        self.detail_url = reverse('user-detail', kwargs={'pk': self.target.pk})
+        self.client.force_authenticate(user=self.admin)
+
+    def test_last_login_is_null_when_user_has_never_logged_in(self):
+        response = self.client.get(self.detail_url)
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+        self.assertIn('last_login', response.data)
+        self.assertIsNone(response.data['last_login'])
+
+    def test_last_login_is_present_in_list_response(self):
+        response = self.client.get(self.list_url)
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+        usernames = {u['username'] for u in response.data}
+        self.assertIn('target_ll', usernames)
+        target_data = next(u for u in response.data if u['username'] == 'target_ll')
+        self.assertIn('last_login', target_data)

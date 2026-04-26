@@ -59,15 +59,21 @@ class SalesOrderDetailSerializer(serializers.ModelSerializer):
     def create(self, validated_data):
         items_data = validated_data.pop('items', [])
         order = SalesOrder.objects.create(**validated_data)
+        user = self.context['request'].user if 'request' in self.context else None
 
         for item_data in items_data:
-            SalesOrderItem.objects.create(sales=order, **item_data)
+            kwargs = {'sales': order, **item_data}
+            if user:
+                kwargs['created_by'] = user
+                kwargs['updated_by'] = user
+            SalesOrderItem.objects.create(**kwargs)
 
         order.refresh_from_db()
         return order
 
     def update(self, instance, validated_data):
         items_data = validated_data.pop('items', None)
+        user = self.context['request'].user if 'request' in self.context else None
 
         with transaction.atomic():
             for attr, value in validated_data.items():
@@ -81,6 +87,7 @@ class SalesOrderDetailSerializer(serializers.ModelSerializer):
                     related_name='items',
                     model=SalesOrderItem,
                     fk_field='sales',
+                    user=user,
                 )
 
         instance.refresh_from_db()
@@ -104,15 +111,21 @@ class PurchaseOrderDetailSerializer(serializers.ModelSerializer):
     def create(self, validated_data):
         items_data = validated_data.pop('items', [])
         order = PurchaseOrder.objects.create(**validated_data)
+        user = self.context['request'].user if 'request' in self.context else None
 
         for item_data in items_data:
-            PurchaseOrderItem.objects.create(purchase=order, **item_data)
+            kwargs = {'purchase': order, **item_data}
+            if user:
+                kwargs['created_by'] = user
+                kwargs['updated_by'] = user
+            PurchaseOrderItem.objects.create(**kwargs)
 
         order.refresh_from_db()
         return order
 
     def update(self, instance, validated_data):
         items_data = validated_data.pop('items', None)
+        user = self.context['request'].user if 'request' in self.context else None
 
         with transaction.atomic():
             for attr, value in validated_data.items():
@@ -126,6 +139,7 @@ class PurchaseOrderDetailSerializer(serializers.ModelSerializer):
                     related_name='items',
                     model=PurchaseOrderItem,
                     fk_field='purchase',
+                    user=user,
                 )
 
         instance.refresh_from_db()

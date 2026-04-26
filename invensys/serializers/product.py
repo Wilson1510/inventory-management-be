@@ -1,9 +1,17 @@
 from django.db import transaction
 from rest_framework import serializers
+from rest_framework.exceptions import APIException
 from ..models import Product, ProductPrice, ProductUnit, Unit, Category
 from .unit import UnitNestedSerializer
 from .category import CategoryNestedSerializer
 from .utils import METADATA_FIELDS, READ_ONLY_FIELDS, sync_fk_children
+
+class DuplicatePayloadError(APIException):
+    status_code = 400
+    default_code = 'invalid'
+
+    def __init__(self, detail, code=None):
+        self.detail = {'detail': detail, 'code': code or self.default_code}
 
 
 class ProductPriceSerializer(serializers.ModelSerializer):
@@ -49,26 +57,69 @@ class ProductDetailSerializer(serializers.ModelSerializer):
             'sku_number', 'base_price', 'quantity'
         ] + READ_ONLY_FIELDS
 
+    def validate(self, attrs):
+        units_data = attrs.get('productunit_set')
+        if units_data is not None:
+            seen_units = set()
+            for i, unit_data in enumerate(units_data):
+                unit = unit_data.get('unit')
+                if unit:
+                    if unit.id in seen_units:
+                        raise DuplicatePayloadError(
+                            "Duplicate units are not allowed.",
+                            code="duplicate_unit_in_payload"
+                        )
+                    seen_units.add(unit.id)
+
+        prices_data = attrs.get('prices')
+        if prices_data is not None:
+            seen_prices = set()
+            for price_data in prices_data:
+                unit = price_data.get('unit')
+                min_qty = price_data.get('minimum_quantity')
+                if unit and min_qty is not None:
+                    key = (unit.id, min_qty)
+                    if key in seen_prices:
+                        raise DuplicatePayloadError(
+                            "Duplicate prices for the same unit and minimum quantity are not allowed.",
+                            code="duplicate_price_in_payload"
+                        )
+                    seen_prices.add(key)
+
+        return attrs
+
     def create(self, validated_data):
         prices_data = validated_data.pop('prices', [])
         units_data = validated_data.pop('productunit_set', [])
+        user = self.context['request'].user if 'request' in self.context else None
 
         with transaction.atomic():
             product = Product.objects.create(**validated_data)
 
-            ProductPrice.objects.bulk_create([
-                ProductPrice(product=product, **price_data) for price_data in prices_data
-            ])
+            price_objs = []
+            for price_data in prices_data:
+                kwargs = {'product': product, **price_data}
+                if user:
+                    kwargs['created_by'] = user
+                    kwargs['updated_by'] = user
+                price_objs.append(ProductPrice(**kwargs))
+            ProductPrice.objects.bulk_create(price_objs)
 
-            ProductUnit.objects.bulk_create([
-                ProductUnit(product=product, **unit_data) for unit_data in units_data
-            ])
+            unit_objs = []
+            for unit_data in units_data:
+                kwargs = {'product': product, **unit_data}
+                if user:
+                    kwargs['created_by'] = user
+                    kwargs['updated_by'] = user
+                unit_objs.append(ProductUnit(**kwargs))
+            ProductUnit.objects.bulk_create(unit_objs)
 
         return product
 
     def update(self, instance, validated_data):
         prices_data = validated_data.pop('prices', None)
         units_data = validated_data.pop('productunit_set', None)
+        user = self.context['request'].user if 'request' in self.context else None
 
         with transaction.atomic():
             for attr, value in validated_data.items():
@@ -82,6 +133,7 @@ class ProductDetailSerializer(serializers.ModelSerializer):
                     related_name='prices',
                     model=ProductPrice,
                     fk_field='product',
+                    user=user,
                 )
             if units_data is not None:
                 sync_fk_children(
@@ -90,6 +142,7 @@ class ProductDetailSerializer(serializers.ModelSerializer):
                     related_name='productunit_set',
                     model=ProductUnit,
                     fk_field='product',
+                    user=user,
                 )
 
         return instance
