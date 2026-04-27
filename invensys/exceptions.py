@@ -52,16 +52,13 @@ def _parse_protected_error(exc: ProtectedError, context: dict) -> tuple[str, str
 def custom_exception_handler(exc, context):
     response = exception_handler(exc, context)
 
-    if (
-        response is not None
-        and response.status_code == status.HTTP_400_BAD_REQUEST
-        and isinstance(response.data, dict)
-    ):
-        for field, errors in response.data.items():
-            if hasattr(errors[0], 'code'):
-                response.data = {
-                    'detail': f"{errors[0]}" if isinstance(errors, list) else f"{errors}",
-                    'code': errors[0].code
+    if response is not None:
+        if response.status_code == status.HTTP_400_BAD_REQUEST and isinstance(response.data, dict):
+            for field, errors in response.data.items():
+                if hasattr(errors[0], 'code'):
+                    response.data = {
+                        'detail': f"{errors[0]}" if isinstance(errors, list) else f"{errors}",
+                        'code': errors[0].code
                 }
                 break
         return response
@@ -73,5 +70,3 @@ def custom_exception_handler(exc, context):
     if isinstance(exc, IntegrityError):
         detail, code = _parse_integrity_error(exc)
         return Response({'detail': detail, 'code': code}, status=status.HTTP_409_CONFLICT)
-
-    return None

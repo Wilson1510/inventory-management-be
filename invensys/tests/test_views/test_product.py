@@ -237,7 +237,7 @@ class ProductViewSetTest(APITestCase):
         }
         response = self.client.post(self.list_url, payload, format='json')
         self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)
-        self.assertIn('category_id', response.data)
+        self.assertEqual(response.data['code'], 'does_not_exist')
         self.assertNotIn('units', response.data)
 
     def test_create_product_with_duplicate_units(self):

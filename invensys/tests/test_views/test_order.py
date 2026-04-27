@@ -255,7 +255,7 @@ class SalesOrderViewSetTest(APITestCase):
         }
         response = self.client.post(self.list_url, payload, format='json')
         self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)
-        self.assertIn('customer_id', response.data)
+        self.assertEqual(response.data['code'], 'does_not_exist')
 
 
 class PurchaseOrderViewSetTest(APITestCase):
@@ -490,4 +490,4 @@ class PurchaseOrderViewSetTest(APITestCase):
         }
         response = self.client.post(self.list_url, payload, format='json')
         self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)
-        self.assertIn('supplier_id', response.data)
+        self.assertEqual(response.data['code'], 'does_not_exist')

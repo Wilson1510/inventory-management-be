@@ -12,7 +12,8 @@
         "email": "admin@mail.com",
         "name": "System Admin",
         "role": "admin",
-        "is_active": true
+        "is_active": true,
+        "last_login": "2026-04-25T10:00:00Z"
     },
     {
         "id": 2,
@@ -20,7 +21,8 @@
         "email": "staff@mail.com",
         "name": "Warehouse Staff",
         "role": "staff",
-        "is_active": true
+        "is_active": true,
+        "last_login": "2026-04-25T10:00:00Z"
     }
 ]
 ```
@@ -35,7 +37,8 @@
     "email": "admin@mail.com",
     "name": "System Admin",
     "role": "admin",
-    "is_active": true
+    "is_active": true,
+    "last_login": "2026-04-25T10:00:00Z"
 }
 ```
 
@@ -59,7 +62,8 @@
     "email": "admin@mail.com",
     "name": "System Admin",
     "role": "admin",
-    "is_active": true
+    "is_active": true,
+    "last_login": "2026-04-25T10:00:00Z"
 }
 ```
 
@@ -87,7 +91,8 @@ PATCH send only changed fields
     "email": "admin@mail.com",
     "name": "System Admin",
     "role": "admin",
-    "is_active": true
+    "is_active": true,
+    "last_login": "2026-04-25T10:00:00Z"
 }
 ```
 
@@ -122,7 +127,8 @@ PATCH send only changed fields
     "email": "wilson.soeparman@gmail.com",
     "name": "Wilson Soeparman",
     "role": "staff",
-    "is_active": true
+    "is_active": true,
+    "last_login": "2026-04-25T10:00:00Z"
 }
 ```
 
@@ -144,7 +150,8 @@ PATCH send only changed fields
     "email": "wilson.soeparman@gmail.com",
     "name": "Wilson Soeparman",
     "role": "staff",
-    "is_active": true
+    "is_active": true,
+    "last_login": "2026-04-25T10:00:00Z"
 }
 ```
 
