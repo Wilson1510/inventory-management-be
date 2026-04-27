@@ -79,6 +79,6 @@ class CategoryViewSetTest(APITestCase):
         response = self.client.delete(self.detail_url)
 
         self.assertEqual(response.status_code, status.HTTP_409_CONFLICT)
-        self.assertEqual(response.data['code'], 'category_has_products')
+        self.assertEqual(response.data['code'], 'has_references')
         self.assertIn('detail', response.data)
         self.assertTrue(Category.objects.filter(pk=self.category.pk).exists())
