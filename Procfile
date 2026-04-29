@@ -1,2 +1,1 @@
-web: gunicorn
-inv_management.wsgi:application
+web: gunicorn inv_management.wsgi:application
