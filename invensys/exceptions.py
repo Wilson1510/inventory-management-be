@@ -49,7 +49,7 @@ def custom_exception_handler(exc, context):
             for field, errors in response.data.items():
                 if hasattr(errors[0], 'code'):
                     response.data = {
-                        'detail': f"{errors[0]}" if isinstance(errors, list) else f"{errors}",
+                        'detail': f"{field}: {errors[0]}" if isinstance(errors, list) else f"{field}: {errors}",
                         'code': errors[0].code
                 }
                 break
