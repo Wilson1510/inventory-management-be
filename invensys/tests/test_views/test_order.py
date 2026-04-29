@@ -17,6 +17,8 @@ from ...models import (
     PurchaseOrderItem,
     SalesOrder,
     SalesOrderItem,
+    Delivery,
+    Receipt,
     Supplier,
     Unit,
 )
@@ -229,15 +231,19 @@ class SalesOrderViewSetTest(APITestCase):
         self.assertEqual(self.sales_order.status, SalesOrder.Status.CANCELLED)
 
     def test_cancel_sales_order_bad_request(self):
-        with patch('invensys.views.SalesOrder.cancel') as mock_cancel:
-            mock_cancel.side_effect = ValueError("Test error")
-            self.client.force_authenticate(user=self.admin_a)
-            response = self.client.post(self.cancel_url)
+        self.client.force_authenticate(user=self.admin_a)
+        self.sales_order.delivery_date = timezone.now().date() + timedelta(days=1)
+        self.sales_order.save()
+        self.client.post(self.confirm_url)
+        delivery = self.sales_order.deliveries.first()
+        delivery.status = Delivery.Status.DONE
+        delivery.save()
+        response = self.client.post(self.cancel_url)
 
-            self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)
-            self.assertIn('detail', response.data)
-            self.sales_order.refresh_from_db()
-            self.assertEqual(self.sales_order.status, SalesOrder.Status.DRAFT)
+        self.assertEqual(response.status_code, status.HTTP_409_CONFLICT)
+        self.assertIn('detail', response.data)
+        self.sales_order.refresh_from_db()
+        self.assertEqual(self.sales_order.status, SalesOrder.Status.CONFIRMED)
 
     def test_invalid_create_sales_order(self):
         self.client.force_authenticate(user=self.admin_a)
@@ -464,15 +470,19 @@ class PurchaseOrderViewSetTest(APITestCase):
         self.assertEqual(self.purchase_order.status, PurchaseOrder.Status.CANCELLED)
 
     def test_cancel_purchase_order_bad_request(self):
-        with patch('invensys.views.PurchaseOrder.cancel') as mock_cancel:
-            mock_cancel.side_effect = ValueError("Test error")
-            self.client.force_authenticate(user=self.admin_a)
-            response = self.client.post(self.cancel_url)
+        self.client.force_authenticate(user=self.admin_a)
+        self.purchase_order.arrival_date = timezone.now().date() + timedelta(days=1)
+        self.purchase_order.save()
+        self.client.post(self.confirm_url)
+        receipt = self.purchase_order.receipts.first()
+        receipt.status = Receipt.Status.DONE
+        receipt.save()
+        response = self.client.post(self.cancel_url)
 
-            self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)
-            self.assertIn('detail', response.data)
-            self.purchase_order.refresh_from_db()
-            self.assertEqual(self.purchase_order.status, PurchaseOrder.Status.DRAFT)
+        self.assertEqual(response.status_code, status.HTTP_409_CONFLICT)
+        self.assertIn('detail', response.data)
+        self.purchase_order.refresh_from_db()
+        self.assertEqual(self.purchase_order.status, PurchaseOrder.Status.CONFIRMED)
 
     def test_invalid_create_purchase_order(self):
         self.client.force_authenticate(user=self.admin_a)

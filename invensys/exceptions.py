@@ -15,11 +15,6 @@ def _parse_integrity_error(exc: IntegrityError) -> tuple[str, str]:
         value = unique_match.group(2)
         return (f"A record with {field} '{value}' already exists.", 'unique')
 
-    return (
-        'A database integrity error occurred. The data you submitted conflicts with existing '
-        'records.', 'integrity_error'
-    )
-
 
 def _parse_protected_error(exc: ProtectedError, context: dict) -> tuple[str, str]:
     """
@@ -34,10 +29,7 @@ def _parse_protected_error(exc: ProtectedError, context: dict) -> tuple[str, str
     parent_model = 'record'
     view = context.get('view')
     if view is not None:
-        try:
-            parent_model = view.get_queryset().model.__name__.lower()
-        except Exception:
-            pass
+        parent_model = view.get_queryset().model.__name__.lower()
 
     references = sorted({obj.__class__.__name__.lower() for obj in exc.protected_objects})
 
@@ -69,4 +61,26 @@ def custom_exception_handler(exc, context):
 
     if isinstance(exc, IntegrityError):
         detail, code = _parse_integrity_error(exc)
-        return Response({'detail': detail, 'code': code}, status=status.HTTP_409_CONFLICT)
+        return Response({'detail': detail, 'code': code}, status=status.HTTP_400_BAD_REQUEST)
+
+    if isinstance(exc, ValueError):
+        responses = {
+            "Cannot delete a confirmed order": ('confirmed_order', status.HTTP_409_CONFLICT),
+            "Cannot cancel purchase order if it has done receipts": (
+                'purchase_order_has_done_receipts', status.HTTP_409_CONFLICT
+            ),
+            "Cannot cancel sales order if it has done deliveries": (
+                'sales_order_has_done_deliveries', status.HTTP_409_CONFLICT
+            ),
+            "Delivery date must be in the future": (
+                'delivery_date_in_the_future', status.HTTP_400_BAD_REQUEST
+            ),
+            "Arrival date must be in the future": (
+                'arrival_date_in_the_future', status.HTTP_400_BAD_REQUEST
+            ),
+        }
+        if str(exc) in responses:
+            code, status_code = responses[str(exc)]
+            return Response({'detail': str(exc), 'code': code}, status=status_code)
+
+        return Response({'detail': str(exc), 'code': 'invalid'}, status=status.HTTP_400_BAD_REQUEST)

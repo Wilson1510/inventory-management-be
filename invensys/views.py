@@ -182,26 +182,20 @@ class SalesOrderViewSet(UserTrackingMixin, viewsets.ModelViewSet):
     @action(detail=True, methods=['post'])
     def confirm(self, request, pk=None):
         order = self.get_object()
-        try:
-            order.confirm()
-            return Response(
-                {"detail": "Sales Order berhasil dikonfirmasi."},
-                status=status.HTTP_200_OK
-            )
-        except ValueError as e:
-            return Response({"detail": str(e)}, status=status.HTTP_400_BAD_REQUEST)
+        order.confirm()
+        return Response(
+            {"detail": "Sales Order berhasil dikonfirmasi."},
+            status=status.HTTP_200_OK
+        )
 
     @action(detail=True, methods=['post'])
     def cancel(self, request, pk=None):
         order = self.get_object()
-        try:
-            order.cancel()
-            return Response(
-                {"detail": "Sales Order berhasil dibatalkan."},
-                status=status.HTTP_200_OK
-            )
-        except ValueError as e:
-            return Response({"detail": str(e)}, status=status.HTTP_400_BAD_REQUEST)
+        order.cancel()
+        return Response(
+            {"detail": "Sales Order berhasil dibatalkan."},
+            status=status.HTTP_200_OK
+        )
 
 
 class PurchaseOrderViewSet(UserTrackingMixin, viewsets.ModelViewSet):
@@ -219,26 +213,20 @@ class PurchaseOrderViewSet(UserTrackingMixin, viewsets.ModelViewSet):
     @action(detail=True, methods=['post'])
     def confirm(self, request, pk=None):
         order = self.get_object()
-        try:
-            order.confirm()
-            return Response(
-                {"detail": "Purchase Order berhasil dikonfirmasi."},
-                status=status.HTTP_200_OK
-            )
-        except ValueError as e:
-            return Response({"detail": str(e)}, status=status.HTTP_400_BAD_REQUEST)
+        order.confirm()
+        return Response(
+            {"detail": "Purchase Order berhasil dikonfirmasi."},
+            status=status.HTTP_200_OK
+        )
 
     @action(detail=True, methods=['post'])
     def cancel(self, request, pk=None):
         order = self.get_object()
-        try:
-            order.cancel()
-            return Response(
-                {"detail": "Purchase Order berhasil dibatalkan."},
-                status=status.HTTP_200_OK
-            )
-        except ValueError as e:
-            return Response({"detail": str(e)}, status=status.HTTP_400_BAD_REQUEST)
+        order.cancel()
+        return Response(
+            {"detail": "Purchase Order berhasil dibatalkan."},
+            status=status.HTTP_200_OK
+        )
 
 
 class DeliveryViewSet(UserTrackingMixin, mixins.UpdateModelMixin, viewsets.ReadOnlyModelViewSet):

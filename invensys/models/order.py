@@ -95,7 +95,7 @@ class PurchaseOrder(BaseOrder):
     def _cancel_receipts(self):
         for receipt in self.receipts.all():
             if receipt.status == receipt.Status.DONE:
-                raise ValueError("Receipt cannot be cancelled if it is done")
+                raise ValueError("Cannot cancel purchase order if it has done receipts")
             receipt.cancel()
 
     def _create_receipt_order_and_items(self):
@@ -153,7 +153,7 @@ class SalesOrder(BaseOrder):
     def _cancel_deliveries(self):
         for delivery in self.deliveries.all():
             if delivery.status == delivery.Status.DONE:
-                raise ValueError("Delivery cannot be cancelled if it is done")
+                raise ValueError("Cannot cancel sales order if it has done deliveries")
             delivery.cancel()
 
     def _create_delivery_order_and_items(self):
