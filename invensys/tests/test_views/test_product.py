@@ -222,7 +222,7 @@ class ProductViewSetTest(APITestCase):
         response = self.client.delete(self.detail_url)
 
         self.assertEqual(response.status_code, status.HTTP_409_CONFLICT)
-        self.assertEqual(response.data['code'], 'product_has_references')
+        self.assertEqual(response.data['code'], 'has_references')
         self.assertTrue(Product.objects.filter(pk=self.product.pk).exists())
 
     def test_invalid_create_product(self):
@@ -237,7 +237,7 @@ class ProductViewSetTest(APITestCase):
         }
         response = self.client.post(self.list_url, payload, format='json')
         self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)
-        self.assertIn('category_id', response.data)
+        self.assertEqual(response.data['code'], 'does_not_exist')
         self.assertNotIn('units', response.data)
 
     def test_create_product_with_duplicate_units(self):

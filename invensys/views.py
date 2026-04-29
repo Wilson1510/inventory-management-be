@@ -19,7 +19,6 @@ from .services.dashboard import metrics_payload, top_data_payload
 from rest_framework.permissions import IsAuthenticated
 from .permissions import IsAdmin, IsAdminOrReadOnly
 from django.db.models import Count, Max, Sum, DecimalField, Q
-from django.db.models.deletion import ProtectedError
 from django.db.models.functions import Coalesce
 from rest_framework.decorators import action
 from rest_framework.response import Response
@@ -47,27 +46,6 @@ class UserTrackingMixin:
 
     def perform_update(self, serializer):
         serializer.save(updated_by=self.request.user)
-
-
-class ProtectedDeleteMixin:
-    """Maps django.db ProtectedError on delete() to 409 JSON for API clients."""
-
-    protected_delete_detail = (
-        'This record cannot be deleted because other records depend on it.'
-    )
-    protected_delete_code = 'protected_delete'
-
-    def destroy(self, request, *args, **kwargs):
-        try:
-            return super().destroy(request, *args, **kwargs)
-        except ProtectedError:
-            return Response(
-                {
-                    'detail': self.protected_delete_detail,
-                    'code': self.protected_delete_code,
-                },
-                status=status.HTTP_409_CONFLICT,
-            )
 
 
 User = get_user_model()
@@ -115,41 +93,25 @@ class UserViewSet(viewsets.ModelViewSet):
         return Response({'message': 'Password changed successfully'})
 
 
-class CategoryViewSet(UserTrackingMixin, ProtectedDeleteMixin, viewsets.ModelViewSet):
+class CategoryViewSet(UserTrackingMixin, viewsets.ModelViewSet):
     permission_classes = [IsAdmin]
     queryset = Category.objects.all()
     serializer_class = CategorySerializer
-    protected_delete_detail = (
-        'This category cannot be deleted because it has '
-        'one or more associated products.'
-    )
-    protected_delete_code = 'category_has_products'
 
 
-class UnitViewSet(UserTrackingMixin, ProtectedDeleteMixin, viewsets.ModelViewSet):
+class UnitViewSet(UserTrackingMixin, viewsets.ModelViewSet):
     permission_classes = [IsAdmin]
     queryset = Unit.objects.all()
     serializer_class = UnitSerializer
-    protected_delete_detail = (
-        'This unit cannot be deleted because it is still referenced by '
-        'sales or purchase order items.'
-    )
-    protected_delete_code = 'unit_has_references'
 
 
-class ProductViewSet(UserTrackingMixin, ProtectedDeleteMixin, viewsets.ModelViewSet):
+class ProductViewSet(UserTrackingMixin, viewsets.ModelViewSet):
     permission_classes = [IsAdminOrReadOnly]
 
     queryset = Product.objects.select_related('category').prefetch_related(
         'prices__unit',
         'productunit_set__unit'
     )
-
-    protected_delete_detail = (
-        'This product cannot be deleted because it is still referenced by '
-        'sales or purchase order items.'
-    )
-    protected_delete_code = 'product_has_references'
 
     def get_serializer_class(self):
         if self.action == 'list':
@@ -220,26 +182,20 @@ class SalesOrderViewSet(UserTrackingMixin, viewsets.ModelViewSet):
     @action(detail=True, methods=['post'])
     def confirm(self, request, pk=None):
         order = self.get_object()
-        try:
-            order.confirm()
-            return Response(
-                {"detail": "Sales Order berhasil dikonfirmasi."},
-                status=status.HTTP_200_OK
-            )
-        except ValueError as e:
-            return Response({"detail": str(e)}, status=status.HTTP_400_BAD_REQUEST)
+        order.confirm()
+        return Response(
+            {"detail": "Sales Order berhasil dikonfirmasi."},
+            status=status.HTTP_200_OK
+        )
 
     @action(detail=True, methods=['post'])
     def cancel(self, request, pk=None):
         order = self.get_object()
-        try:
-            order.cancel()
-            return Response(
-                {"detail": "Sales Order berhasil dibatalkan."},
-                status=status.HTTP_200_OK
-            )
-        except ValueError as e:
-            return Response({"detail": str(e)}, status=status.HTTP_400_BAD_REQUEST)
+        order.cancel()
+        return Response(
+            {"detail": "Sales Order berhasil dibatalkan."},
+            status=status.HTTP_200_OK
+        )
 
 
 class PurchaseOrderViewSet(UserTrackingMixin, viewsets.ModelViewSet):
@@ -257,26 +213,20 @@ class PurchaseOrderViewSet(UserTrackingMixin, viewsets.ModelViewSet):
     @action(detail=True, methods=['post'])
     def confirm(self, request, pk=None):
         order = self.get_object()
-        try:
-            order.confirm()
-            return Response(
-                {"detail": "Purchase Order berhasil dikonfirmasi."},
-                status=status.HTTP_200_OK
-            )
-        except ValueError as e:
-            return Response({"detail": str(e)}, status=status.HTTP_400_BAD_REQUEST)
+        order.confirm()
+        return Response(
+            {"detail": "Purchase Order berhasil dikonfirmasi."},
+            status=status.HTTP_200_OK
+        )
 
     @action(detail=True, methods=['post'])
     def cancel(self, request, pk=None):
         order = self.get_object()
-        try:
-            order.cancel()
-            return Response(
-                {"detail": "Purchase Order berhasil dibatalkan."},
-                status=status.HTTP_200_OK
-            )
-        except ValueError as e:
-            return Response({"detail": str(e)}, status=status.HTTP_400_BAD_REQUEST)
+        order.cancel()
+        return Response(
+            {"detail": "Purchase Order berhasil dibatalkan."},
+            status=status.HTTP_200_OK
+        )
 
 
 class DeliveryViewSet(UserTrackingMixin, mixins.UpdateModelMixin, viewsets.ReadOnlyModelViewSet):

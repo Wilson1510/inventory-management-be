@@ -140,7 +140,7 @@ class UserViewSetTest(APITestCase):
         }
         response = self.client.post(self.list_url, payload, format='json')
         self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)
-        self.assertIn('name', response.data)
+        self.assertEqual(response.data['code'], 'invalid')
 
     def test_patch_user(self):
         self.client.force_authenticate(user=self.admin)

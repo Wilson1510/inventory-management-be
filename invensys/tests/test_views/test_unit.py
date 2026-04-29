@@ -101,6 +101,6 @@ class UnitViewSetTest(APITestCase):
         response = self.client.delete(self.detail_url)
 
         self.assertEqual(response.status_code, status.HTTP_409_CONFLICT)
-        self.assertEqual(response.data['code'], 'unit_has_references')
+        self.assertEqual(response.data['code'], 'has_references')
         self.assertIn('detail', response.data)
         self.assertTrue(Unit.objects.filter(pk=self.unit.pk).exists())
