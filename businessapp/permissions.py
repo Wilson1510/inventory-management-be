@@ -1,4 +1,16 @@
-from rest_framework.permissions import BasePermission, SAFE_METHODS
+from rest_framework.permissions import BasePermission, SAFE_METHODS, IsAuthenticated as DRFIsAuthenticated
+
+
+class IsAuthenticated(DRFIsAuthenticated):
+    message = 'Demo accounts are read-only.'
+
+    def has_permission(self, request, view):
+        is_auth = super().has_permission(request, view)
+        if not is_auth:
+            return False
+        if getattr(request.user, 'role', None) == 'demo' and request.method not in SAFE_METHODS:
+            return False
+        return True
 
 
 class IsAdmin(BasePermission):
@@ -8,6 +20,10 @@ class IsAdmin(BasePermission):
         user = request.user
         if not user.is_authenticated:
             return False
+
+        if getattr(user, 'role', None) == 'demo' and request.method in SAFE_METHODS:
+            return True
+            
         if user.is_superuser:
             return True
         return getattr(user, 'role', None) == 'admin'
