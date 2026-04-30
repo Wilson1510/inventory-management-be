@@ -16,8 +16,7 @@ from .serializers import (
     DashboardMetricsSerializer, DashboardTopDataSerializer,
 )
 from .services.dashboard import metrics_payload, top_data_payload
-from rest_framework.permissions import IsAuthenticated
-from .permissions import IsAdmin, IsAdminOrReadOnly
+from .permissions import IsAdmin, IsAdminOrReadOnly, IsAuthenticated
 from django.db.models import Count, Max, Sum, DecimalField, Q
 from django.db.models.functions import Coalesce
 from rest_framework.decorators import action
